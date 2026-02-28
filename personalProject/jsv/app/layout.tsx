@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   title: "JS Visualizer",
   description:
     "Visualize the JavaScript event loop, call stack, task queue, and microtask queue in real time.",
+  icons: {
+    icon: "/top2.png",
+  },
 };
 
 export default function RootLayout({

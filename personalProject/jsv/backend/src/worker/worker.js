@@ -92,11 +92,14 @@ const ignoredAsyncHookTypes = [
 ];
 
 const asyncIdToResource = {};
+const promiseAsyncIds = new Set();
+const microtaskAsyncIds = new Set();
 
 const init = (asyncId, type, triggerAsyncId, resource) => {
   asyncIdToResource[asyncId] = resource;
 
   if (type === "PROMISE") {
+    promiseAsyncIds.add(asyncId);
     postEvent(Events.InitPromise(asyncId, triggerAsyncId));
   }
   if (type === "Timeout") {
@@ -104,38 +107,37 @@ const init = (asyncId, type, triggerAsyncId, resource) => {
     postEvent(Events.InitTimeout(asyncId, callbackName));
   }
   if (type === "Microtask") {
+    microtaskAsyncIds.add(asyncId);
     postEvent(Events.InitMicrotask(asyncId, triggerAsyncId));
   }
 };
 
 const before = (asyncId) => {
-  const resource = asyncIdToResource[asyncId] || {};
-  const resourceName = (resource.constructor || {}).name;
-
-  if (resourceName === "PromiseWrap") {
+  if (promiseAsyncIds.has(asyncId)) {
     postEvent(Events.BeforePromise(asyncId));
   }
+  if (microtaskAsyncIds.has(asyncId)) {
+    postEvent(Events.BeforeMicrotask(asyncId));
+  }
+  const resource = asyncIdToResource[asyncId] || {};
+  const resourceName = (resource.constructor || {}).name;
   if (resourceName === "Timeout") {
     postEvent(Events.BeforeTimeout(asyncId));
-  }
-  if (resourceName === "AsyncResource") {
-    postEvent(Events.BeforeMicrotask(asyncId));
   }
 };
 
 const after = (asyncId) => {
-  const resource = asyncIdToResource[asyncId] || {};
-  const resourceName = (resource.constructor || {}).name;
-
-  if (resourceName === "PromiseWrap") {
+  if (promiseAsyncIds.has(asyncId)) {
     postEvent(Events.AfterPromise(asyncId));
   }
-  if (resourceName === "AsyncResource") {
+  if (microtaskAsyncIds.has(asyncId)) {
     postEvent(Events.AfterMicrotask(asyncId));
   }
 };
 
 const destroy = (asyncId) => {
+  promiseAsyncIds.delete(asyncId);
+  microtaskAsyncIds.delete(asyncId);
   delete asyncIdToResource[asyncId];
 };
 
@@ -146,6 +148,20 @@ const promiseResolve = (asyncId) => {
 asyncHooks
   .createHook({ init, before, after, destroy, promiseResolve })
   .enable();
+
+// ── Tracked queueMicrotask wrapper ──────────────────────────────────
+// Node.js queueMicrotask doesn't fire async_hooks, so we wrap it with
+// an AsyncResource so init/before/after hooks fire properly.
+
+const { AsyncResource } = asyncHooks;
+
+const trackedQueueMicrotask = (callback) => {
+  const resource = new AsyncResource("Microtask");
+  queueMicrotask(() => {
+    resource.runInAsyncScope(callback);
+    resource.emitDestroy();
+  });
+};
 
 // ── Code instrumentation via falafel ────────────────────────────────
 
@@ -299,7 +315,7 @@ const vm = new VM({
     _,
     lodash: _,
     setTimeout,
-    queueMicrotask,
+    queueMicrotask: trackedQueueMicrotask,
     console: {
       log: Tracer.log,
       warn: Tracer.warn,
