@@ -1,0 +1,21 @@
+{
+  "name": "jsv-server",
+  "version": "1.0.0",
+  "description": "JS Visualizer execution server - traces JavaScript event loop via async_hooks",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "engines": {
+    "node": "18.x"
+  },
+  "dependencies": {
+    "@babel/core": "^7.24.0",
+    "falafel": "^2.2.5",
+    "lodash": "^4.17.21",
+    "pretty-format": "^29.7.0",
+    "vm2": "^3.9.19",
+    "ws": "^8.16.0"
+  }
+}
