@@ -49,28 +49,30 @@ The frontend and backend are **completely separate** deployable units. The front
 ## Tech Stack
 
 ### Frontend
-| Technology | Purpose |
-|---|---|
-| Next.js 16.1.6 (App Router, Turbopack) | React framework |
-| React 19.2.3 | UI library |
-| TypeScript | Type safety |
-| Tailwind CSS v4 + shadcn/ui (new-york style, zinc palette) | Styling & UI components |
-| Monaco Editor (`@monaco-editor/react`) | Code editor with syntax highlighting & inline decorations |
-| Zustand | Global state management (store with playback logic) |
-| Framer Motion | 150ms ease-out animations for stack/queue items |
-| nanoid | Unique ID generation for frames and queue items |
-| lucide-react | Icons |
+
+| Technology                                                 | Purpose                                                   |
+| ---------------------------------------------------------- | --------------------------------------------------------- |
+| Next.js 16.1.6 (App Router, Turbopack)                     | React framework                                           |
+| React 19.2.3                                               | UI library                                                |
+| TypeScript                                                 | Type safety                                               |
+| Tailwind CSS v4 + shadcn/ui (new-york style, zinc palette) | Styling & UI components                                   |
+| Monaco Editor (`@monaco-editor/react`)                     | Code editor with syntax highlighting & inline decorations |
+| Zustand                                                    | Global state management (store with playback logic)       |
+| Framer Motion                                              | 150ms ease-out animations for stack/queue items           |
+| nanoid                                                     | Unique ID generation for frames and queue items           |
+| lucide-react                                               | Icons                                                     |
 
 ### Backend
-| Technology | Purpose |
-|---|---|
-| ws | WebSocket server |
-| worker_threads | Isolated code execution in a separate thread |
-| async_hooks | Traces Promise, Timeout, and Microtask lifecycle events |
-| falafel | AST-based code instrumentation (wraps function bodies with enter/exit tracers) |
-| @babel/core | Babel plugin to inject `Tracer.iterateLoop()` into loops for infinite loop protection |
-| vm2 | Sandboxed code execution with controlled globals |
-| lodash + pretty-format | Utilities for deduplication and console output formatting |
+
+| Technology             | Purpose                                                                               |
+| ---------------------- | ------------------------------------------------------------------------------------- |
+| ws                     | WebSocket server                                                                      |
+| worker_threads         | Isolated code execution in a separate thread                                          |
+| async_hooks            | Traces Promise, Timeout, and Microtask lifecycle events                               |
+| falafel                | AST-based code instrumentation (wraps function bodies with enter/exit tracers)        |
+| @babel/core            | Babel plugin to inject `Tracer.iterateLoop()` into loops for infinite loop protection |
+| vm2                    | Sandboxed code execution with controlled globals                                      |
+| lodash + pretty-format | Utilities for deduplication and console output formatting                             |
 
 ---
 
@@ -184,7 +186,9 @@ store.playNextEvent():
 ## Backend (Execution Server)
 
 ### `backend/src/main/app.js`
+
 WebSocket server on `process.env.PORT || 8080`. Handles one message type: `RunCode`. For each execution:
+
 - Spawns a worker via `launchWorker()`
 - Collects all events until `Done`
 - Runs `reduceEvents()` to post-process events
@@ -192,9 +196,11 @@ WebSocket server on `process.env.PORT || 8080`. Handles one message type: `RunCo
 - Safety timeout: 10 seconds, then `EarlyTermination` sent
 
 ### `backend/src/main/launchWorker.js`
+
 Spawns `worker.js` as a `Worker` thread with `workerData = sourceCode`. Forwards all `message` events to the callback. On worker error → `UncaughtError`. On worker exit → `Done`.
 
 ### `backend/src/main/eventsReducer.js`
+
 Critical post-processing step. The raw events from `async_hooks` need significant reduction:
 
 1. **Deduplicates** multiple `ResolvePromise` events for the same promise ID
@@ -205,6 +211,7 @@ Critical post-processing step. The raw events from `async_hooks` need significan
 6. **Handles `queueMicrotask()`** via `InitMicrotask`/`BeforeMicrotask`/`AfterMicrotask` pattern
 
 ### `backend/src/worker/worker.js`
+
 The core execution engine. Steps:
 
 1. **AST instrumentation (falafel)**: Wraps every function body in `Tracer.enterFunc()` / `Tracer.exitFunc()` with a `try/finally` block. Handles regular functions, function expressions, and arrow functions (both block body and implicit return).
@@ -219,6 +226,7 @@ The core execution engine. Steps:
 4. **Sandbox (vm2)**: Runs instrumented code with controlled globals: `setTimeout`, `queueMicrotask`, `console` (log/warn/error), `Tracer`, `nextId`, `lodash`.
 
 ### `backend/src/worker/loopTracer.js`
+
 A Babel visitor plugin. For each loop statement type (`WhileStatement`, `DoWhileStatement`, `ForStatement`, `ForInStatement`, `ForOfStatement`), pushes a `Tracer.iterateLoop()` call expression to the loop body.
 
 ---
@@ -230,6 +238,7 @@ A Babel visitor plugin. For each loop statement type (`WhileStatement`, `DoWhile
 **`app/layout.tsx`**: Root layout. Sets `<html className="dark">` for permanent dark mode. Wraps children in `<TooltipProvider>`. Uses Geist and Geist Mono fonts.
 
 **`app/page.tsx`**: Client component. Two-column responsive layout:
+
 - **Left column (45%)**: `<CodeEditor>` + `<ConsoleOutput>`
 - **Right column (55%)**: `<QueuePanel title="Task Queue">` + `<QueuePanel title="Microtask Queue">` + bottom row of `<CallStack>` (240px fixed) + `<EventLoopStepper>` (flex fill)
 - Header with title "JS Visualizer"
@@ -238,6 +247,7 @@ A Babel visitor plugin. For each loop statement type (`WhileStatement`, `DoWhile
 - Monaco Editor is loaded via `next/dynamic` with `ssr: false`
 
 ### Styling
+
 - **Theme**: Dark mode only. Zinc color palette throughout (zinc-950 background, zinc-800 borders, zinc-300 text).
 - **globals.css**: Tailwind v4 imports (`tailwindcss`, `tw-animate-css`, `shadcn/tailwind.css`), dark variant, shadcn theme variables, Monaco `.jsv-highlight` / `.jsv-highlight-inline` classes.
 - **Animations**: Framer Motion with 150ms ease-out transitions. `AnimatePresence` with `mode="popLayout"` for graceful entry/exit of stack frames and queue items.
@@ -253,23 +263,23 @@ Single global store with the following shape:
 ```typescript
 interface JSVState {
   // Code
-  code: string;              // Current editor content
-  mode: AppMode;             // "editing" | "running" | "visualizing"
-  example: string;           // Name of selected example
+  code: string; // Current editor content
+  mode: AppMode; // "editing" | "running" | "visualizing"
+  example: string; // Name of selected example
 
   // Visualization data (what's currently displayed in panels)
-  frames: StackFrame[];      // Call stack frames (id + name)
-  tasks: QueueItem[];        // Task queue items (id + name + numericId)
-  microtasks: QueueItem[];   // Microtask queue items (id + name)
-  markers: CodeMarker[];     // Monaco editor highlights (start + end offsets)
-  consoleOutput: ConsoleEntry[];  // Console entries (id + type + message)
+  frames: StackFrame[]; // Call stack frames (id + name)
+  tasks: QueueItem[]; // Task queue items (id + name + numericId)
+  microtasks: QueueItem[]; // Microtask queue items (id + name)
+  markers: CodeMarker[]; // Monaco editor highlights (start + end offsets)
+  consoleOutput: ConsoleEntry[]; // Console entries (id + type + message)
 
   // Playback
-  events: JSVEvent[];        // Full array of reduced events from backend
+  events: JSVEvent[]; // Full array of reduced events from backend
   currentEventIndex: number; // Pointer into events array
-  currentStep: EventLoopStep;// "none" | "evaluateScript" | "runTask" | "runMicrotasks" | "rerender"
-  isAutoPlaying: boolean;    // Whether auto-play loop is running
-  playbackSpeed: number;     // 0.5, 1, 2, or 4
+  currentStep: EventLoopStep; // "none" | "evaluateScript" | "runTask" | "runMicrotasks" | "rerender"
+  isAutoPlaying: boolean; // Whether auto-play loop is running
+  playbackSpeed: number; // 0.5, 1, 2, or 4
 
   // Error
   error: string | null;
@@ -278,17 +288,18 @@ interface JSVState {
   setCode(code: string): void;
   setExample(example: string): void;
   setPlaybackSpeed(speed: number): void;
-  runCode(): Promise<void>;  // Sends code to backend, receives events
-  reset(): void;             // Returns to editing mode
-  playNextEvent(): boolean;  // Advances one step, returns true if reached end
-  autoPlay(): void;          // Starts auto-play loop
-  pause(): void;             // Stops auto-play
+  runCode(): Promise<void>; // Sends code to backend, receives events
+  reset(): void; // Returns to editing mode
+  playNextEvent(): boolean; // Advances one step, returns true if reached end
+  autoPlay(): void; // Starts auto-play loop
+  pause(): void; // Stops auto-play
 }
 ```
 
 ### Playback Engine (`playNextEvent`)
 
 The core visualization logic. On each call:
+
 1. Skips non-playable events (but logs `UncaughtError`/`EarlyTermination` to console)
 2. Processes one playable event by mutating the visualization state
 3. Skips non-playable events again after processing
@@ -296,6 +307,7 @@ The core visualization logic. On each call:
 5. Auto-chains: if a `DequeueMicrotask`/`BeforeTimeout` is immediately followed by `EnterFunction`, recursively calls itself to show the function entering the call stack
 
 ### Auto-play
+
 Calls `playNextEvent()` in a loop with a delay of `max(100, 500 / speed)` ms between steps. Stops when events are exhausted or user pauses.
 
 ---
@@ -305,66 +317,81 @@ Calls `playNextEvent()` in a loop with a delay of `max(100, 500 / speed)` ms bet
 ### WebSocket Protocol
 
 **Client → Server:**
+
 ```json
 { "type": "RunCode", "payload": "console.log('hello')" }
 ```
 
 **Server → Client:**
+
 ```json
 [
-  { "type": "EnterFunction", "payload": { "id": 0, "name": "anonymous", "start": 0, "end": 22 } },
+  {
+    "type": "EnterFunction",
+    "payload": { "id": 0, "name": "anonymous", "start": 0, "end": 22 }
+  },
   { "type": "ConsoleLog", "payload": { "message": "hello\n" } },
-  { "type": "ExitFunction", "payload": { "id": 0, "name": "anonymous", "start": 0, "end": 22 } }
+  {
+    "type": "ExitFunction",
+    "payload": { "id": 0, "name": "anonymous", "start": 0, "end": 22 }
+  }
 ]
 ```
 
 ### Event Type Reference
 
-| Event | Produced By | Payload | Playable | Effect on UI |
-|---|---|---|---|---|
-| `EnterFunction` | falafel instrumentation | `{ id, name, start, end }` | Yes | Push frame to Call Stack, highlight code |
-| `ExitFunction` | falafel instrumentation | `{ id, name, start, end }` | Yes | Pop frame from Call Stack, remove highlight |
-| `ErrorFunction` | falafel instrumentation | `{ message, id, name, start, end }` | Yes | Log error to Console |
-| `ConsoleLog` | vm2 sandbox `console.log` | `{ message }` | Yes | Append log to Console |
-| `ConsoleWarn` | vm2 sandbox `console.warn` | `{ message }` | Yes | Append warn to Console |
-| `ConsoleError` | vm2 sandbox `console.error` | `{ message }` | Yes | Append error to Console |
-| `InitTimeout` | async_hooks `init` (Timeout) | `{ id, callbackName }` | Yes | Push item to Task Queue |
-| `BeforeTimeout` | async_hooks `before` (Timeout) | `{ id }` | Yes | Remove item from Task Queue |
-| `EnqueueMicrotask` | eventsReducer (synthetic) | `{ name }` | Yes | Push item to Microtask Queue |
-| `DequeueMicrotask` | eventsReducer (synthetic) | `{}` | Yes | Shift item from Microtask Queue |
-| `Rerender` | eventsReducer (synthetic) | `{}` | Yes | Visual step indicator |
-| `InitPromise` | async_hooks `init` (PROMISE) | `{ id, parentId }` | No | Used by reducer for mapping |
-| `ResolvePromise` | async_hooks `promiseResolve` | `{ id }` | No | Triggers EnqueueMicrotask in reducer |
-| `BeforePromise` | async_hooks `before` (PromiseWrap) | `{ id }` | No | Triggers DequeueMicrotask injection |
-| `AfterPromise` | async_hooks `after` (PromiseWrap) | `{ id }` | No | Internal tracking |
-| `InitMicrotask` | async_hooks `init` (Microtask) | `{ id, parentId }` | No | Used by reducer for queueMicrotask tracking |
-| `BeforeMicrotask` | async_hooks `before` (AsyncResource) | `{ id }` | No | Triggers DequeueMicrotask injection |
-| `AfterMicrotask` | async_hooks `after` (AsyncResource) | `{ id }` | No | Internal tracking |
-| `UncaughtError` | worker error handler | `{ name, message, stack }` | No | Logged to Console as error |
-| `EarlyTermination` | timeout/event limit | `{ message }` | No | Logged to Console as warning |
-| `Done` | worker exit | `{ exitCode }` | No | Signals end of execution |
+| Event              | Produced By                          | Payload                             | Playable | Effect on UI                                |
+| ------------------ | ------------------------------------ | ----------------------------------- | -------- | ------------------------------------------- |
+| `EnterFunction`    | falafel instrumentation              | `{ id, name, start, end }`          | Yes      | Push frame to Call Stack, highlight code    |
+| `ExitFunction`     | falafel instrumentation              | `{ id, name, start, end }`          | Yes      | Pop frame from Call Stack, remove highlight |
+| `ErrorFunction`    | falafel instrumentation              | `{ message, id, name, start, end }` | Yes      | Log error to Console                        |
+| `ConsoleLog`       | vm2 sandbox `console.log`            | `{ message }`                       | Yes      | Append log to Console                       |
+| `ConsoleWarn`      | vm2 sandbox `console.warn`           | `{ message }`                       | Yes      | Append warn to Console                      |
+| `ConsoleError`     | vm2 sandbox `console.error`          | `{ message }`                       | Yes      | Append error to Console                     |
+| `InitTimeout`      | async_hooks `init` (Timeout)         | `{ id, callbackName }`              | Yes      | Push item to Task Queue                     |
+| `BeforeTimeout`    | async_hooks `before` (Timeout)       | `{ id }`                            | Yes      | Remove item from Task Queue                 |
+| `EnqueueMicrotask` | eventsReducer (synthetic)            | `{ name }`                          | Yes      | Push item to Microtask Queue                |
+| `DequeueMicrotask` | eventsReducer (synthetic)            | `{}`                                | Yes      | Shift item from Microtask Queue             |
+| `Rerender`         | eventsReducer (synthetic)            | `{}`                                | Yes      | Visual step indicator                       |
+| `InitPromise`      | async_hooks `init` (PROMISE)         | `{ id, parentId }`                  | No       | Used by reducer for mapping                 |
+| `ResolvePromise`   | async_hooks `promiseResolve`         | `{ id }`                            | No       | Triggers EnqueueMicrotask in reducer        |
+| `BeforePromise`    | async_hooks `before` (PromiseWrap)   | `{ id }`                            | No       | Triggers DequeueMicrotask injection         |
+| `AfterPromise`     | async_hooks `after` (PromiseWrap)    | `{ id }`                            | No       | Internal tracking                           |
+| `InitMicrotask`    | async_hooks `init` (Microtask)       | `{ id, parentId }`                  | No       | Used by reducer for queueMicrotask tracking |
+| `BeforeMicrotask`  | async_hooks `before` (AsyncResource) | `{ id }`                            | No       | Triggers DequeueMicrotask injection         |
+| `AfterMicrotask`   | async_hooks `after` (AsyncResource)  | `{ id }`                            | No       | Internal tracking                           |
+| `UncaughtError`    | worker error handler                 | `{ name, message, stack }`          | No       | Logged to Console as error                  |
+| `EarlyTermination` | timeout/event limit                  | `{ message }`                       | No       | Logged to Console as warning                |
+| `Done`             | worker exit                          | `{ exitCode }`                      | No       | Signals end of execution                    |
 
 ---
 
 ## Component Reference
 
 ### `components/code-editor.tsx`
+
 Monaco editor wrapper. Defines a custom `jsv-dark` theme matching the zinc palette. Manages `decorationsCollection` for code highlighting during visualization. Read-only when `mode !== "editing"`.
 
 ### `components/call-stack.tsx`
+
 Vertical LIFO display with `flex-col-reverse`. Uses `AnimatePresence` with `mode="popLayout"`. Newest frame (top of stack) gets brighter styling (`bg-zinc-700 text-white`). Empty state shown when no frames.
 
 ### `components/queue-panel.tsx`
+
 Shared component used for both Task Queue and Microtask Queue. Horizontal layout with `ScrollArea` + `ScrollBar`. First item (oldest, next to be dequeued) gets brighter styling. Props: `title`, `items: QueueItem[]`, `panelType`.
 
 ### `components/event-loop.tsx`
+
 4-step vertical stepper showing the Event Loop phases. Steps: Evaluate Script → Run a Task → Run all Microtasks → Rerender. Active step: white filled circle + description text. Completed steps: checkmark. Reads `currentStep` from store.
 
 ### `components/console-output.tsx`
+
 Card with auto-scrolling `ScrollArea`. Displays `log` (zinc-300), `warn` (yellow-400 with ⚠), `error` (red-400 with ✕) entries. Monospace font. Max height 200px.
 
 ### `components/controls.tsx`
+
 Toolbar with:
+
 - **Example selector**: `Select` dropdown with 7 preset examples
 - **Run / Edit button**: Toggles between modes
 - **Step**: Advances one event (`playNextEvent()`)
@@ -373,6 +400,7 @@ Toolbar with:
 - **Speed selector**: 0.5x / 1x / 2x / 4x
 
 ### `components/info-dialogs.tsx`
+
 Provides an `InfoButton` component that renders a small ℹ icon. Clicking it opens a `Dialog` with educational content about the panel (Call Stack, Task Queue, Microtask Queue, or Event Loop). Content explains the concept, TL;DR, and detailed description.
 
 ---
@@ -380,6 +408,7 @@ Provides an `InfoButton` component that renders a small ℹ icon. Clicking it op
 ## Running Locally
 
 ### Prerequisites
+
 - Node.js 18+ (backend requires `worker_threads`, `async_hooks`, `vm2`)
 - npm or pnpm
 
@@ -393,6 +422,7 @@ node index.js
 ```
 
 Or with file watching:
+
 ```bash
 npm run dev
 ```
@@ -463,12 +493,12 @@ The `Procfile` tells Heroku to run `web: node index.js`. The WebSocket server us
 
 ## Preset Examples
 
-| Name | Demonstrates |
-|---|---|
-| Default (Mixed) | `setTimeout`, `Promise.then`, synchronous calls — shows execution order |
-| Call Stack | 10 nested function calls — visualizes LIFO stack behavior |
-| Task Queue | Multiple `setTimeout` with different delays |
-| Microtask Queue | `Promise.resolve().then()` and `Promise.reject().catch()` |
-| Tasks vs Microtasks | Side-by-side comparison of Task and Microtask execution order |
-| Nested Promises | Promise chain with `.then().then().then()` |
-| Mixed Timers & Promises | Interleaved `setTimeout` and `Promise.resolve` with `console.log` |
+| Name                    | Demonstrates                                                            |
+| ----------------------- | ----------------------------------------------------------------------- |
+| Default (Mixed)         | `setTimeout`, `Promise.then`, synchronous calls — shows execution order |
+| Call Stack              | 10 nested function calls — visualizes LIFO stack behavior               |
+| Task Queue              | Multiple `setTimeout` with different delays                             |
+| Microtask Queue         | `Promise.resolve().then()` and `Promise.reject().catch()`               |
+| Tasks vs Microtasks     | Side-by-side comparison of Task and Microtask execution order           |
+| Nested Promises         | Promise chain with `.then().then().then()`                              |
+| Mixed Timers & Promises | Interleaved `setTimeout` and `Promise.resolve` with `console.log`       |

@@ -3,11 +3,11 @@ const traceLoops = (babel) => {
 
   const transformLoop = (path) => {
     const iterateLoop = t.memberExpression(
-      t.identifier('Tracer'),
-      t.identifier('iterateLoop'),
+      t.identifier("Tracer"),
+      t.identifier("iterateLoop"),
     );
     const callIterateLoop = t.callExpression(iterateLoop, []);
-    path.get('body').pushContainer('body', callIterateLoop);
+    path.get("body").pushContainer("body", callIterateLoop);
   };
 
   return {

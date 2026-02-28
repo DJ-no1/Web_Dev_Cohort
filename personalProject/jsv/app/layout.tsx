@@ -15,7 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "JS Visualizer",
-  description: "Visualize the JavaScript event loop, call stack, task queue, and microtask queue in real time.",
+  description:
+    "Visualize the JavaScript event loop, call stack, task queue, and microtask queue in real time.",
 };
 
 export default function RootLayout({
@@ -28,9 +29,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <TooltipProvider delayDuration={300}>
-          {children}
-        </TooltipProvider>
+        <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
       </body>
     </html>
   );

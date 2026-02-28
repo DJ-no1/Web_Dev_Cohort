@@ -1,24 +1,24 @@
-const WebSocket = require('ws');
-const { launchWorker } = require('./launchWorker');
-const { reduceEvents } = require('./eventsReducer');
+const WebSocket = require("ws");
+const { launchWorker } = require("./launchWorker");
+const { reduceEvents } = require("./eventsReducer");
 
 const port = process.env.PORT || 8080;
 const wss = new WebSocket.Server({ port });
-console.log('JSV Server running on port:', port);
+console.log("JSV Server running on port:", port);
 
 const Messages = {
-  RunCode: 'RunCode',
+  RunCode: "RunCode",
 };
 
-wss.on('connection', (ws) => {
-  console.log('Client connected');
+wss.on("connection", (ws) => {
+  console.log("Client connected");
 
-  ws.on('message', (message) => {
+  ws.on("message", (message) => {
     let parsed;
     try {
       parsed = JSON.parse(message);
     } catch {
-      ws.send(JSON.stringify({ type: 'Error', payload: 'Invalid JSON' }));
+      ws.send(JSON.stringify({ type: "Error", payload: "Invalid JSON" }));
       return;
     }
 
@@ -32,10 +32,12 @@ wss.on('connection', (ws) => {
       const onClose = () => {
         isFinished = true;
         if (worker) {
-          try { worker.terminate(); } catch {}
+          try {
+            worker.terminate();
+          } catch {}
         }
       };
-      ws.on('close', onClose);
+      ws.on("close", onClose);
 
       worker = launchWorker(payload, (evtString) => {
         if (isFinished) return;
@@ -49,18 +51,26 @@ wss.on('connection', (ws) => {
 
         events.push(evt);
 
-        if (evt.type === 'Done') {
+        if (evt.type === "Done") {
           isFinished = true;
-          ws.removeListener('close', onClose);
+          ws.removeListener("close", onClose);
 
           try {
             const reducedEvents = reduceEvents(events);
             ws.send(JSON.stringify(reducedEvents));
           } catch (err) {
-            console.error('Error reducing events:', err);
-            ws.send(JSON.stringify([
-              { type: 'UncaughtError', payload: { name: 'ServerError', message: 'Failed to process events' } }
-            ]));
+            console.error("Error reducing events:", err);
+            ws.send(
+              JSON.stringify([
+                {
+                  type: "UncaughtError",
+                  payload: {
+                    name: "ServerError",
+                    message: "Failed to process events",
+                  },
+                },
+              ]),
+            );
           }
         }
       });
@@ -69,19 +79,27 @@ wss.on('connection', (ws) => {
       setTimeout(() => {
         if (!isFinished) {
           isFinished = true;
-          try { worker.terminate(); } catch {}
-          ws.send(JSON.stringify([
-            { type: 'EarlyTermination', payload: { message: 'Server timeout: execution exceeded 10 seconds.' } }
-          ]));
+          try {
+            worker.terminate();
+          } catch {}
+          ws.send(
+            JSON.stringify([
+              {
+                type: "EarlyTermination",
+                payload: {
+                  message: "Server timeout: execution exceeded 10 seconds.",
+                },
+              },
+            ]),
+          );
         }
       }, 10000);
-
     } else {
-      console.error('Unknown message type:', type);
+      console.error("Unknown message type:", type);
     }
   });
 
-  ws.on('close', () => {
-    console.log('Client disconnected');
+  ws.on("close", () => {
+    console.log("Client disconnected");
   });
 });
