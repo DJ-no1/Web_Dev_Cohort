@@ -1,5 +1,21 @@
-const anand = "Anand";
+// const anand = "Anand";
 
-anand.test = "test";
+// anand.test = "test";
 
-console.log(anand);
+// console.log(anand);
+
+anand('asura')
+console.log('Hello, world!');
+
+function anand (name){
+    console.log(`why are you here ${name}` )
+    
+    function goku(a, b){
+        return a + b 
+        
+    }
+}
+
+const help = anand.goku(2, 3)
+
+console.log(help)

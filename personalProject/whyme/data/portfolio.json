@@ -1,0 +1,155 @@
+{
+    "hero": {
+        "name": "Anand S",
+        "tagline": "Building things that matter, one commit at a time.",
+        "description": "Full-stack developer on a journey through a web development cohort. Sharing everything I learn — blogs, projects, videos, and assignments.",
+        "image": {
+            "source": "github",
+            "value": "DJ-no1"
+        }
+    },
+    "socials": [
+        {
+            "platform": "github",
+            "url": "https://github.com/anands"
+        },
+        {
+            "platform": "linkedin",
+            "url": "https://linkedin.com/in/anands"
+        },
+        {
+            "platform": "twitter",
+            "url": "https://x.com/anands"
+        },
+        {
+            "platform": "hashnode",
+            "url": "https://anands.hashnode.dev"
+        },
+        {
+            "platform": "youtube",
+            "url": "https://youtube.com/@anands"
+        }
+    ],
+    "sections": [
+        {
+            "type": "blogs",
+            "title": "Blogs",
+            "config": {
+                "sources": [
+                    {
+                        "platform": "hashnode",
+                        "host": "anands.hashnode.dev",
+                        "show": "latest",
+                        "count": 6,
+                        "exclude": []
+                    }
+                ],
+                "manual": [
+                    {
+                        "title": "My First Blog Post",
+                        "description": "An introductory post about my web dev journey.",
+                        "url": "https://anands.hashnode.dev/my-first-post",
+                        "platform": "hashnode",
+                        "date": "2025-12-01"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "projects",
+            "title": "Projects",
+            "items": [
+                {
+                    "title": "WhyMe Portfolio",
+                    "description": "A minimal black & white portfolio showcase. Clone, edit JSON, deploy.",
+                    "url": "https://whyme.vercel.app",
+                    "tech": [
+                        "Next.js",
+                        "TypeScript",
+                        "Tailwind CSS",
+                        "shadcn/ui"
+                    ],
+                    "github": "https://github.com/anands/whyme"
+                },
+                {
+                    "title": "Todo CLI",
+                    "description": "A command-line todo manager built with Node.js.",
+                    "url": "https://github.com/anands/todo-cli",
+                    "tech": [
+                        "Node.js",
+                        "TypeScript"
+                    ],
+                    "github": "https://github.com/anands/todo-cli"
+                }
+            ]
+        },
+        {
+            "type": "videos",
+            "title": "Videos",
+            "items": [
+                {
+                    "title": "How I Built My Portfolio in One Day",
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "platform": "youtube",
+                    "description": "A walkthrough of building this portfolio project."
+                },
+                {
+                    "title": "Understanding React Server Components",
+                    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "platform": "youtube",
+                    "description": "Deep dive into RSC and why they matter."
+                }
+            ]
+        },
+        {
+            "type": "assignments",
+            "title": "Assignments",
+            "items": [
+                {
+                    "title": "Week 1 — HTML & CSS Basics",
+                    "description": "Built a responsive landing page from scratch.",
+                    "url": "https://github.com/anands/cohort-assignments/tree/main/week-1",
+                    "tech": [
+                        "HTML",
+                        "CSS"
+                    ]
+                },
+                {
+                    "title": "Week 2 — JavaScript Fundamentals",
+                    "description": "Solved 20 JS problems covering closures, promises, and async/await.",
+                    "url": "https://github.com/anands/cohort-assignments/tree/main/week-2",
+                    "tech": [
+                        "JavaScript"
+                    ]
+                },
+                {
+                    "title": "Week 3 — React & State Management",
+                    "description": "Built a todo app with React and useReducer.",
+                    "url": "https://github.com/anands/cohort-assignments/tree/main/week-3",
+                    "tech": [
+                        "React",
+                        "TypeScript"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "achievements",
+            "title": "Achievements",
+            "items": [
+                {
+                    "title": "Completed Web Dev Cohort",
+                    "description": "Successfully completed a full-stack web development cohort covering HTML, CSS, JS, React, Node.js, and more.",
+                    "date": "2026-01-15",
+                    "issuer": "100xDevs"
+                },
+                {
+                    "title": "Open Source Contributor",
+                    "description": "Contributed to multiple open-source projects on GitHub.",
+                    "url": "https://github.com/anands",
+                    "date": "2025-11-01"
+                }
+            ]
+        }
+    ]
+}

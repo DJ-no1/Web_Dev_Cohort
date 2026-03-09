@@ -1,0 +1,13 @@
+{
+  "name": "jsv-demo-backend",
+  "version": "1.0.0",
+  "description": "Simple WebSocket backend for the JS Event Loop Visualizer demo. Used for teaching purposes.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

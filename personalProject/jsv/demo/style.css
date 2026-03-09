@@ -1,0 +1,575 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   style.css — JS Event Loop Visualizer Demo
+   ═══════════════════════════════════════════════════════════════════════════
+   A dark, VS-Code-inspired theme.
+   Color guide:
+     Call Stack     → green  (#4ade80)
+     Task Queue     → orange (#fb923c)
+     Microtask Queue → purple (#a78bfa)
+     Console        → gray   (#94a3b8)
+     Highlight glow → bright version of panel color
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── CSS Variables (easy to customise) ─────────────────────────────────────── */
+:root {
+    --bg-page: #0f172a;
+    /* deep navy background */
+    --bg-panel: #1e293b;
+    /* panel background */
+    --bg-panel-dark: #162032;
+    /* slightly darker panel variant */
+    --border: #334155;
+    /* subtle border */
+
+    --text-primary: #e2e8f0;
+    /* main text color */
+    --text-muted: #64748b;
+    /* secondary / hint text */
+    --text-code: #7dd3fc;
+    /* code color */
+
+    --color-stack: #4ade80;
+    /* green — call stack */
+    --color-task: #fb923c;
+    /* orange — task queue */
+    --color-micro: #a78bfa;
+    /* purple — microtask queue */
+    --color-console: #94a3b8;
+    /* slate — console */
+    --color-accent: #38bdf8;
+    /* sky blue — accent / auto-play */
+
+    --radius: 8px;
+    --transition: 0.3s ease;
+}
+
+/* ── Reset & Base ─────────────────────────────────────────────────────────── */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 16px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+header {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-accent);
+    margin-bottom: 4px;
+}
+
+.subtitle {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* ── Connection Status Bar ───────────────────────────────────────────────── */
+.connection-status {
+    text-align: center;
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+    background: #2d1515;
+    color: #fca5a5;
+    border: 1px solid #7f1d1d;
+    transition: var(--transition);
+}
+
+/* When connected, the JS changes the class to 'connected' */
+.connection-status.connected {
+    background: #0f2a1e;
+    color: #86efac;
+    border-color: #166534;
+}
+
+/* ── Control Bar ─────────────────────────────────────────────────────────── */
+.control-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+}
+
+.control-bar label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+#exampleSelect {
+    flex: 1;
+    background: var(--bg-page);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+#exampleSelect:focus {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn {
+    padding: 8px 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-page);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+}
+
+.btn:hover:not(:disabled) {
+    background: var(--border);
+}
+
+.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Primary button (Run) */
+.btn-primary {
+    background: var(--color-stack);
+    color: #052e16;
+    border-color: var(--color-stack);
+    font-weight: 600;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #86efac;
+}
+
+/* Accent button (Auto Play) */
+.btn-accent {
+    background: var(--color-accent);
+    color: #082f49;
+    border-color: var(--color-accent);
+    font-weight: 600;
+}
+
+.btn-accent:hover:not(:disabled) {
+    background: #7dd3fc;
+}
+
+/* Pause state — turns red when auto-playing */
+.btn-accent.is-playing {
+    background: #f87171;
+    color: #450a0a;
+    border-color: #f87171;
+}
+
+/* ── Main Layout ─────────────────────────────────────────────────────────── */
+/* Four columns: Code | Call Stack | Queues | Console */
+.main-layout {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+    min-height: 320px;
+}
+
+/* ── Generic Panel ───────────────────────────────────────────────────────── */
+.panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: box-shadow var(--transition), border-color var(--transition);
+}
+
+/* Panel header bar */
+.panel-header {
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: var(--bg-panel-dark);
+    border-bottom: 1px solid var(--border);
+}
+
+/* Small hint text below the header */
+.panel-hint {
+    padding: 4px 14px 6px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+}
+
+/* ── Panel Highlight Animations ──────────────────────────────────────────── */
+/* These classes are added by JS to flash the panel when it changes */
+
+#callStackPanel.highlight {
+    border-color: var(--color-stack);
+    box-shadow: 0 0 14px 2px rgba(74, 222, 128, 0.3);
+}
+
+#taskQueuePanel.highlight {
+    border-color: var(--color-task);
+    box-shadow: 0 0 14px 2px rgba(251, 146, 60, 0.3);
+}
+
+#microtaskQueuePanel.highlight {
+    border-color: var(--color-micro);
+    box-shadow: 0 0 14px 2px rgba(167, 139, 250, 0.3);
+}
+
+#consolePanel.highlight {
+    border-color: var(--color-console);
+    box-shadow: 0 0 14px 2px rgba(148, 163, 184, 0.25);
+}
+
+/* ── Code Panel ──────────────────────────────────────────────────────────── */
+#codePanel .panel-header {
+    color: var(--text-code);
+}
+
+#codeDisplay {
+    flex: 1;
+    padding: 14px;
+    font-family: "Fira Code", "Cascadia Code", "Consolas", monospace;
+    font-size: 0.82rem;
+    color: var(--text-code);
+    white-space: pre;
+    overflow: auto;
+    line-height: 1.6;
+    background: var(--bg-panel-dark);
+}
+
+/* ── Call Stack Panel ────────────────────────────────────────────────────── */
+#callStackPanel .panel-header {
+    color: var(--color-stack);
+}
+
+/* The stack container: items stack up from the bottom */
+.stack-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column-reverse;
+    /* items at the end of the array appear at the bottom */
+    justify-content: flex-start;
+    padding: 8px;
+    gap: 6px;
+    overflow-y: auto;
+}
+
+/* The "ground" visual at the bottom of the call stack */
+.stack-ground {
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    padding: 4px 0;
+    border-top: 1px solid var(--border);
+    letter-spacing: 0.1em;
+}
+
+/* Individual stack frame item (e.g. "square", "console.log") */
+.stack-item {
+    background: rgba(74, 222, 128, 0.12);
+    border: 1px solid var(--color-stack);
+    color: var(--color-stack);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.85rem;
+    text-align: center;
+    /* Animate when it appears */
+    animation: slideInFromTop 0.25s ease;
+}
+
+/* ── Queue Panels ────────────────────────────────────────────────────────── */
+.queues-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+#taskQueuePanel .panel-header {
+    color: var(--color-task);
+}
+
+#microtaskQueuePanel .panel-header {
+    color: var(--color-micro);
+}
+
+.queue-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    /* newest at bottom, oldest at top */
+    padding: 8px;
+    gap: 6px;
+    overflow-y: auto;
+    min-height: 70px;
+}
+
+/* Task Queue item (orange) */
+.task-item {
+    background: rgba(251, 146, 60, 0.12);
+    border: 1px solid var(--color-task);
+    color: var(--color-task);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.82rem;
+    text-align: center;
+    animation: fadeIn 0.25s ease;
+}
+
+/* Microtask Queue item (purple) */
+.micro-item {
+    background: rgba(167, 139, 250, 0.12);
+    border: 1px solid var(--color-micro);
+    color: var(--color-micro);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.82rem;
+    text-align: center;
+    animation: fadeIn 0.25s ease;
+}
+
+/* ── Console Panel ───────────────────────────────────────────────────────── */
+#consolePanel .panel-header {
+    color: var(--color-console);
+}
+
+.console-container {
+    flex: 1;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-y: auto;
+    font-family: monospace;
+}
+
+.console-line {
+    font-size: 0.82rem;
+    color: var(--text-primary);
+    animation: fadeIn 0.2s ease;
+}
+
+/* The ">" prefix for console lines */
+.console-line::before {
+    content: "> ";
+    color: var(--color-stack);
+    font-weight: bold;
+}
+
+/* ── Empty Label ─────────────────────────────────────────────────────────── */
+/* Shown when a stack/queue is empty */
+.empty-label {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-style: italic;
+    padding: 8px;
+    align-self: center;
+    width: 100%;
+}
+
+/* ── Step Description Bar ────────────────────────────────────────────────── */
+.step-description {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--color-accent);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    min-height: 52px;
+    transition: border-left-color var(--transition);
+    line-height: 1.5;
+}
+
+/* ── Playback Controls ───────────────────────────────────────────────────── */
+.playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.step-counter {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    min-width: 80px;
+    text-align: center;
+}
+
+.speed-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.speed-label select {
+    background: var(--bg-page);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+/* ── Legend ──────────────────────────────────────────────────────────────── */
+.legend {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+}
+
+.legend h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+}
+
+.legend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.dot-callstack {
+    background: var(--color-stack);
+}
+
+.dot-task {
+    background: var(--color-task);
+}
+
+.dot-micro {
+    background: var(--color-micro);
+}
+
+.dot-console {
+    background: var(--color-console);
+}
+
+.legend-note {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: var(--bg-panel-dark);
+    border-radius: 4px;
+    padding: 8px 12px;
+    border-left: 3px solid var(--color-accent);
+}
+
+/* ── Keyframe Animations ─────────────────────────────────────────────────── */
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Pulse animation for the highlight glow effect */
+@keyframes panelPulse {
+    0% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.6;
+    }
+}
+
+/* ── Responsive: stack panels vertically on narrow screens ──────────────── */
+@media (max-width: 900px) {
+    .main-layout {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+    }
+
+    #codePanel {
+        grid-column: 1 / -1;
+        /* span full width */
+    }
+}
+
+@media (max-width: 600px) {
+    .main-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .queues-column {
+        flex-direction: row;
+    }
+}

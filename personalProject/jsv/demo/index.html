@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JS Event Loop Visualizer — Demo</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <!-- ════════════════════════════════════════════════════════════
+         HEADER
+         ═══════════════════════════════════════════════════════════ -->
+    <header>
+        <h1>⚙️ JavaScript Event Loop Visualizer</h1>
+        <p class="subtitle">
+            A beginner-friendly demo — watch how JavaScript executes code step by step
+        </p>
+    </header>
+
+    <!-- ════════════════════════════════════════════════════════════
+         CONNECTION STATUS BAR
+         Shows whether we're connected to the backend server.
+         ═══════════════════════════════════════════════════════════ -->
+    <div id="connectionStatus" class="connection-status">
+        🔴 Not connected — make sure the backend is running (<code>npm start</code> in <code>demo/backend/</code>)
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════
+         CONTROL BAR — Example selector + Run button
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="control-bar">
+        <label for="exampleSelect">Choose an Example:</label>
+        <select id="exampleSelect">
+            <!-- Options are populated by JavaScript when the server sends the list -->
+            <option>Loading examples...</option>
+        </select>
+        <button id="runBtn" class="btn btn-primary" disabled>▶ Run</button>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════
+         MAIN LAYOUT — Code + All Visualization Panels
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="main-layout">
+
+        <!-- ── LEFT: Code Display ─────────────────────────────────── -->
+        <div class="panel" id="codePanel">
+            <div class="panel-header">📄 Code</div>
+            <!-- The code for the selected example is shown here -->
+            <pre id="codeDisplay"><code>Select an example and click Run ▶</code></pre>
+        </div>
+
+        <!-- ── MIDDLE: Call Stack ─────────────────────────────────── -->
+        <!--
+        CALL STACK:
+        Every time a function is CALLED, it's "pushed" onto the top.
+        Every time a function RETURNS, it's "popped" off the top.
+        JavaScript can only do one thing at a time (it's single-threaded),
+        and this stack shows what it's currently doing.
+      -->
+        <div class="panel" id="callStackPanel">
+            <div class="panel-header">📚 Call Stack</div>
+            <div class="panel-hint">Functions push/pop here</div>
+            <!-- Stack items appear here. The BOTTOM item was called first. -->
+            <div id="callStack" class="stack-container">
+                <div class="empty-label">empty</div>
+            </div>
+            <!-- The "ground" at the bottom of the stack — visual metaphor -->
+            <div class="stack-ground">▬▬▬ ground ▬▬▬</div>
+        </div>
+
+        <!-- ── RIGHT COLUMN: Queues ───────────────────────────────── -->
+        <div class="queues-column">
+
+            <!-- ── Task Queue (Macro-task Queue) ──────────────────────
+          TASK QUEUE:
+          setTimeout() and setInterval() callbacks wait here.
+          The Event Loop picks from here only when:
+            1. The Call Stack is EMPTY, AND
+            2. The Microtask Queue is EMPTY
+        ─────────────────────────────────────────────────────────── -->
+            <div class="panel" id="taskQueuePanel">
+                <div class="panel-header">⏰ Task Queue</div>
+                <div class="panel-hint">setTimeout / setInterval callbacks</div>
+                <div id="taskQueue" class="queue-container">
+                    <div class="empty-label">empty</div>
+                </div>
+            </div>
+
+            <!-- ── Microtask Queue ─────────────────────────────────────
+          MICROTASK QUEUE:
+          Promise.then() callbacks wait here.
+          This queue has HIGHER PRIORITY than the Task Queue.
+          The Event Loop empties this queue COMPLETELY before
+          picking any item from the Task Queue.
+        ─────────────────────────────────────────────────────────── -->
+            <div class="panel" id="microtaskQueuePanel">
+                <div class="panel-header">⚡ Microtask Queue</div>
+                <div class="panel-hint">Promise.then() callbacks — higher priority!</div>
+                <div id="microtaskQueue" class="queue-container">
+                    <div class="empty-label">empty</div>
+                </div>
+            </div>
+
+        </div><!-- end queues-column -->
+
+        <!-- ── FAR RIGHT: Console Output ─────────────────────────── -->
+        <div class="panel" id="consolePanel">
+            <div class="panel-header">🖥️ Console</div>
+            <div class="panel-hint">console.log() output appears here</div>
+            <div id="consoleOutput" class="console-container">
+                <div class="empty-label">nothing logged yet</div>
+            </div>
+        </div>
+
+    </div><!-- end main-layout -->
+
+    <!-- ════════════════════════════════════════════════════════════
+         STEP DESCRIPTION BAR
+         Shows what just happened in plain English.
+         ═══════════════════════════════════════════════════════════ -->
+    <div id="stepDescription" class="step-description">
+        Select an example and click <strong>▶ Run</strong> to begin.
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════
+         PLAYBACK CONTROLS
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="playback-controls">
+        <button id="prevBtn" class="btn" disabled>← Prev</button>
+        <span id="stepCounter" class="step-counter">Step 0 / 0</span>
+        <button id="nextBtn" class="btn" disabled>Next →</button>
+        <button id="autoPlayBtn" class="btn btn-accent" disabled>▶ Auto Play</button>
+        <label class="speed-label">
+            Speed:
+            <select id="speedSelect">
+                <option value="1500">Slow</option>
+                <option value="900" selected>Normal</option>
+                <option value="400">Fast</option>
+            </select>
+        </label>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════
+         LEGEND / KEY
+         Explains what each colour means — very helpful for beginners!
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="legend">
+        <h3>📖 How to Read This Visualizer</h3>
+        <div class="legend-grid">
+            <div class="legend-item">
+                <span class="legend-dot dot-callstack"></span>
+                <strong>Call Stack</strong> — Where function calls live. Push when called, pop when returned.
+            </div>
+            <div class="legend-item">
+                <span class="legend-dot dot-task"></span>
+                <strong>Task Queue</strong> — setTimeout/setInterval callbacks wait here. Runs after Microtasks.
+            </div>
+            <div class="legend-item">
+                <span class="legend-dot dot-micro"></span>
+                <strong>Microtask Queue</strong> — Promise.then() callbacks. Higher priority — runs before Task Queue!
+            </div>
+            <div class="legend-item">
+                <span class="legend-dot dot-console"></span>
+                <strong>Console</strong> — Output from console.log() calls.
+            </div>
+        </div>
+        <p class="legend-note">
+            💡 <strong>The Event Loop rule:</strong>
+            When the Call Stack is empty → drain Microtask Queue completely → pick ONE item from Task Queue → repeat.
+        </p>
+    </div>
+
+    <!-- Load our frontend JavaScript file -->
+    <script src="app.js"></script>
+</body>
+
+</html>
