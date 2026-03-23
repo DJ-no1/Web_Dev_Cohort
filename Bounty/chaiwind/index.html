@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>chaiwind — ChaiCode CSS Framework</title>
+  <script src="chaiwind.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <section class="hero-chaicode">
+    <span class="badge-chai">v1.0.0</span>
+    <h1 class="text-5xl font-bold mt-4 mb-3 text-white">chaiwind.js</h1>
+    <p class="text-lg text-gray-300 leading-relaxed">
+      A utility CSS framework for the ChaiCode family ☕🩷🍎
+    </p>
+    <div class="flex gap-3 justify-center mt-8">
+      <button class="btn-chai">☕ Hitesh sir</button>
+      <button class="btn-piyush">🩷 Piyush sir</button>
+      <button class="btn-mac">🍎 Akash sir</button>
+    </div>
+  </section>
+
+  <!-- Cards section -->
+  <section class="bg-gray-50 p-12">
+    <div class="max-w-4xl mx-auto grid grid-cols-3 gap-6">
+
+      <!-- Hitesh sir card -->
+      <div class="card-chai">
+        <span class="badge-chai">☕ Hitesh sir</span>
+        <h2 class="text-xl font-bold mt-3 mb-2 text-masala">Chai palette</h2>
+        <p class="text-sm text-gray-500 leading-relaxed mb-4">
+          Warm browns, adrak gold, kulhad orange. Haanji!
+        </p>
+        <div class="flex gap-2 flex-wrap">
+          <span class="bg-chai text-white px-3 py-1 rounded-full text-xs font-semibold">chai</span>
+          <span class="bg-adrak text-white px-3 py-1 rounded-full text-xs font-semibold">adrak</span>
+          <span class="bg-masala text-white px-3 py-1 rounded-full text-xs font-semibold">masala</span>
+          <span class="bg-kulhad text-white px-3 py-1 rounded-full text-xs font-semibold">kulhad</span>
+          <span class="bg-tapri text-white px-3 py-1 rounded-full text-xs font-semibold">tapri</span>
+        </div>
+      </div>
+
+      <!-- Piyush sir card -->
+      <div class="card-piyush">
+        <span class="badge-piyush">🩷 Piyush sir</span>
+        <h2 class="text-xl font-bold mt-3 mb-2 text-piyush-dark">Pink palette</h2>
+        <p class="text-sm text-gray-500 leading-relaxed mb-4">
+          Hot pink, rose, blush, fuschia. Vibrant energy!
+        </p>
+        <div class="flex gap-2 flex-wrap">
+          <span class="bg-piyush text-white px-3 py-1 rounded-full text-xs font-semibold">piyush</span>
+          <span class="bg-rose text-white px-3 py-1 rounded-full text-xs font-semibold">rose</span>
+          <span class="bg-fuschia text-white px-3 py-1 rounded-full text-xs font-semibold">fuschia</span>
+          <span class="bg-lipstick text-white px-3 py-1 rounded-full text-xs font-semibold">lipstick</span>
+          <span class="bg-blush text-piyush-dark px-3 py-1 rounded-full text-xs font-semibold border border-piyush-light">blush</span>
+        </div>
+      </div>
+
+      <!-- Akash sir card -->
+      <div class="card-mac">
+        <span class="badge-mac">🍎 Akash sir</span>
+        <h2 class="text-xl font-bold mt-3 mb-2 text-midnight">Mac palette</h2>
+        <p class="text-sm text-gray-500 leading-relaxed mb-4">
+          Midnight, space gray, silver, starlight. Clean!
+        </p>
+        <div class="flex gap-2 flex-wrap">
+          <span class="bg-midnight text-white px-3 py-1 rounded-full text-xs font-semibold">midnight</span>
+          <span class="bg-spacegray text-white px-3 py-1 rounded-full text-xs font-semibold">spacegray</span>
+          <span class="bg-silver text-midnight px-3 py-1 rounded-full text-xs font-semibold">silver</span>
+          <span class="bg-macos-blue text-white px-3 py-1 rounded-full text-xs font-semibold">macos-blue</span>
+          <span class="bg-aluminum text-midnight px-3 py-1 rounded-full text-xs font-semibold">aluminum</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Usage example -->
+  <section class="bg-white p-12">
+    <div class="max-w-2xl mx-auto text-center">
+      <h2 class="text-3xl font-bold text-midnight mb-3">Just drop a script tag</h2>
+      <p class="text-gray-500 mb-8">No build step. No config. No npm install needed.</p>
+      <div class="bg-gray-900 rounded-lg p-6 text-left shadow-lg">
+        <p class="text-gray-400 text-sm mb-1">index.html</p>
+        <pre class="text-sm text-green-400 leading-relaxed">&lt;script src="chaiwind.js"&gt;&lt;/script&gt;
+
+&lt;div class="<span class="text-yellow-300">bg-chai text-white p-4 rounded-md</span>"&gt;
+  Haanji! Chai ready 🍵
+&lt;/div&gt;
+
+&lt;button class="<span class="text-pink-400">btn-piyush</span>"&gt;Click me 🩷&lt;/button&gt;
+
+&lt;div class="<span class="text-blue-400">card-mac</span>"&gt;
+  Clean like macOS 🍎
+&lt;/div&gt;</pre>
+      </div>
+    </div>
+  </section>
+
+</body>
+</html>

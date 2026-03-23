@@ -1,0 +1,13 @@
+{
+  "name": "chaiwind",
+  "version": "1.0.0",
+  "description": "Bounty Jitenge hum Hehe",
+  "main": "chaiwind.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["css", "utility", "framework", "chaicode"],
+  "author": "anand",
+  "license": "MIT",
+  "type": "commonjs"
+}
