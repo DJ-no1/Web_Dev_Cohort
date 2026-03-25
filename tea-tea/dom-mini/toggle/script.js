@@ -13,11 +13,18 @@ btn.addEventListener("click", () => {
     : "Light Mode";
 });
 
-// btn.addEventListener("mouseenter", () => {
-//     btn.style.backgroundColor = "red";
 
-// });
+btn.addEventListener("mousemove", () => {
+    btn.style.backgroundColor = "teal";
+  btn.addEventListener("mouseleave", () => {
+    btn.style.backgroundColor = "";
+  });
+});
 
-// btn.addEventListener("mouseleave", () => {
-//     btn.style.backgroundColor = "";
-// });
+btn.addEventListener("click", () => {
+  localStorage.setItem("darkMode", document.body.classList.contains("dark"));
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "t") btn.click();
+}); 

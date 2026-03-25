@@ -11,14 +11,17 @@
     <div id="container">
         <h1 id="title">Color Palette Generator</h1>
 
-        <button id="generate-btn">Generate Palette
+        <!-- Add the format selector -->
+        <label for="format">Color Format:</label>
+        <select id="format">
+            <option value="hex">Hex</option>
+            <option value="rgb">RGB</option>
+        </select>
 
-        </button>
+        <!-- Fix the button ID to match JS -->
+        <button id="generateBtn">Generate Palette</button>
 
-
-        <div id="palette">
-            hello
-        </div>
+        <div id="palette"></div>
     </div>
 </body>
 </html>
