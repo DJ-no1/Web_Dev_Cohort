@@ -3,15 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2.1 lakh ka course    </title>
+    <title>Android Phone Interface</title>
     <link rel="stylesheet" href="style.css">
-    <script src="script.js" defer></script>
 </head>
 <body>
-    <div id="phone">
-
-        
+    <!-- Control Panel -->
+    <div id="control-panel">
+        <h3>Phone Controls</h3>
+        <div class="control-item">
+            <span>Camera Style</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="camera-toggle">
+                <span class="slider"></span>
+            </label>
+            <span class="toggle-label" id="camera-label">Circle</span>
+        </div>
+        <div class="control-item">
+            <span>Body Style</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="body-toggle">
+                <span class="slider"></span>
+            </label>
+            <span class="toggle-label" id="body-label">Rounded</span>
+        </div>
+        <button id="drag-btn">Hold to Move Phone</button>
     </div>
-    
+
+    <!-- Phone Container -->
+    <div id="phone-container">
+        <div id="phone-outer" class="rounded">
+            <div id="phone-inner">
+                <!-- Camera Module (Android style - top left) -->
+                <div id="camera-module" class="circle-style">
+                    <div class="camera-lens main"></div>
+                    <div class="camera-lens secondary"></div>
+                    <div class="camera-flash"></div>
+                </div>
+
+                <!-- Status Bar -->
+                <div id="status-bar">
+                    <div id="status-left">
+                        <span class="time">12:30</span>
+                    </div>
+                    <div id="status-right">
+                        <div class="signal">
+                            <span></span><span></span><span></span><span></span>
+                        </div>
+                        <div class="wifi">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <div class="battery">
+                            <div class="battery-level"></div>
+                            <span class="battery-percent">85%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Home Screen -->
+                <div id="home-screen">
+                    <!-- App Grid -->
+                    <div id="app-grid">
+                        <!-- Row 1 -->
+                        <div class="app-icon" data-app="color-palette">
+                            <div class="icon-inner palette-app">
+                                <div class="palette-colors">
+                                    <span style="background:#ff6b6b"></span>
+                                    <span style="background:#4ecdc4"></span>
+                                    <span style="background:#ffe66d"></span>
+                                    <span style="background:#95e1d3"></span>
+                                </div>
+                            </div>
+                            <span class="app-name">Palette</span>
+                        </div>
+                        <div class="app-icon" data-app="instagram">
+                            <div class="icon-inner instagram">
+                                <div class="camera-body"></div>
+                            </div>
+                            <span class="app-name">Instagram</span>
+                        </div>
+                        <div class="app-icon" data-app="whatsapp">
+                            <div class="icon-inner whatsapp">
+                                <div class="phone-icon"></div>
+                            </div>
+                            <span class="app-name">WhatsApp</span>
+                        </div>
+                        <div class="app-icon" data-app="youtube">
+                            <div class="icon-inner youtube">
+                                <div class="play-btn"></div>
+                            </div>
+                            <span class="app-name">YouTube</span>
+                        </div>
+
+                        <!-- Row 2 -->
+                        <div class="app-icon" data-app="twitter">
+                            <div class="icon-inner twitter">
+                                <span class="x-logo">𝕏</span>
+                            </div>
+                            <span class="app-name">X</span>
+                        </div>
+                        <div class="app-icon" data-app="tiktok">
+                            <div class="icon-inner tiktok">
+                                <div class="note"></div>
+                            </div>
+                            <span class="app-name">TikTok</span>
+                        </div>
+                        <div class="app-icon" data-app="snapchat">
+                            <div class="icon-inner snapchat">
+                                <div class="ghost"></div>
+                            </div>
+                            <span class="app-name">Snapchat</span>
+                        </div>
+                        <div class="app-icon" data-app="facebook">
+                            <div class="icon-inner facebook">
+                                <span class="f-logo">f</span>
+                            </div>
+                            <span class="app-name">Facebook</span>
+                        </div>
+
+                        <!-- Row 3 -->
+                        <div class="app-icon" data-app="telegram">
+                            <div class="icon-inner telegram">
+                                <div class="plane"></div>
+                            </div>
+                            <span class="app-name">Telegram</span>
+                        </div>
+                        <div class="app-icon" data-app="spotify">
+                            <div class="icon-inner spotify">
+                                <div class="spotify-waves"></div>
+                            </div>
+                            <span class="app-name">Spotify</span>
+                        </div>
+                        <div class="app-icon" data-app="gmail">
+                            <div class="icon-inner gmail">
+                                <div class="envelope"></div>
+                            </div>
+                            <span class="app-name">Gmail</span>
+                        </div>
+                        <div class="app-icon" data-app="maps">
+                            <div class="icon-inner maps">
+                                <div class="pin"></div>
+                            </div>
+                            <span class="app-name">Maps</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Bar (Android style) -->
+                <div id="nav-bar">
+                    <div class="nav-btn back">
+                        <div class="back-arrow"></div>
+                    </div>
+                    <div class="nav-btn home">
+                        <div class="home-circle"></div>
+                    </div>
+                    <div class="nav-btn recent">
+                        <div class="recent-square"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Color Palette App Modal -->
+    <div id="palette-modal" class="app-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Color Palette Generator</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="palette-display">
+                    <div class="color-card" data-index="0">
+                        <div class="color-preview"></div>
+                        <span class="color-code">#FF6B6B</span>
+                    </div>
+                    <div class="color-card" data-index="1">
+                        <div class="color-preview"></div>
+                        <span class="color-code">#4ECDC4</span>
+                    </div>
+                    <div class="color-card" data-index="2">
+                        <div class="color-preview"></div>
+                        <span class="color-code">#FFE66D</span>
+                    </div>
+                    <div class="color-card" data-index="3">
+                        <div class="color-preview"></div>
+                        <span class="color-code">#95E1D3</span>
+                    </div>
+                    <div class="color-card" data-index="4">
+                        <div class="color-preview"></div>
+                        <span class="color-code">#F38181</span>
+                    </div>
+                </div>
+                <button id="generate-btn">Generate New Palette</button>
+                <p class="hint">Click on a color code to copy!</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
