@@ -1,3 +1,5 @@
+eraser link : https://app.eraser.io/workspace/pN2GIWah7sS483oAiBe3
+
 # Parking Management System (Comic-Con Themed)
 
 This project defines a database schema for a parking management system designed for high-traffic events like Comic-Con. It supports vehicle tracking, themed parking zones, session handling, and flexible payments.
