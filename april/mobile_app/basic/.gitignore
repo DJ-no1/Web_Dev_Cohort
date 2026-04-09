@@ -44,3 +44,7 @@ app-example
 /android
 # Documentation
 *.md
+
+# Agent/Tool specific
+.agents/
+.claude/

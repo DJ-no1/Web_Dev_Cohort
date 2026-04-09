@@ -1,21 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, TextInput, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Colors } from '@/constants/theme';
 import { StatusBar } from 'expo-status-bar';
 import { useStore } from '@/store/useStore';
 import { MaterialIcons } from '@expo/vector-icons';
-
-// Handle notifications conditionally for Android Expo Go support
-const isAndroid = Platform.OS === 'android';
-const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
-const notificationsSupported = Platform.OS !== 'web' && (!isAndroid || !isExpoGo);
-
-let Notifications: any;
-if (notificationsSupported) {
-  Notifications = require('expo-notifications');
-}
 
 export default function SettingsScreen() {
   const { settings, updateSettings } = useStore();
@@ -64,128 +53,109 @@ export default function SettingsScreen() {
     });
   };
 
-  const handleToggleBackground = async (value: boolean) => {
-    if (value && !notificationsSupported) {
-      Alert.alert(
-        "Limited Support",
-        "Persistent background notifications on Android require a Development Build (via EAS) and are no longer supported in Expo Go SDK 53+.",
-        [{ text: "OK" }]
-      );
-      return;
-    }
-
-    if (value) {
-      if (!Notifications) return;
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert("Permission Denied", "Notifications are needed for the background countdown.");
-        updateSettings({ runInBackground: false });
-        return;
-      }
-    } else {
-      if (Notifications) {
-        await Notifications.cancelAllScheduledNotificationsAsync();
-        await Notifications.dismissAllNotificationsAsync();
-      }
-    }
-    updateSettings({ runInBackground: value });
-  };
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="light" />
       
-      <View style={styles.content}>
+      <ScrollView 
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* ── COUNTDOWN CONFIGURATION ── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>COUNTDOWN CONFIGURATION</Text>
-          
+
+          {/* Duration row */}
           <View style={styles.settingCard}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.settingLabel}>Target Event</Text>
-              <Text style={styles.settingDesc}>Configure countdown duration</Text>
-            </View>
-            
-            <View style={styles.controls}>
-              <View style={[styles.inputWrapper, isTimerRunning && styles.controlBtnDisabled]}>
+            <Text style={styles.settingLabel}>Target Duration</Text>
+            <Text style={styles.settingDesc}>Set the total countdown time</Text>
+
+            <View style={styles.durationRow}>
+              {/* Days */}
+              <View style={styles.durationBlock}>
                 <TextInput
                   value={settings.countdownDays.toString()}
                   onChangeText={handleDaysChange}
                   keyboardType="number-pad"
-                  style={[styles.smallInput, isTimerRunning && { color: Colors.onSurfaceVariant }]}
+                  style={[styles.durationInput, isTimerRunning && styles.inputDisabled]}
                   editable={!isTimerRunning}
                   maxLength={4}
+                  selectTextOnFocus
                 />
-                <Text style={[styles.unitLabel, isTimerRunning && { color: Colors.onSurfaceVariant }]}>D</Text>
+                <Text style={styles.durationUnit}>DAYS</Text>
               </View>
 
-              <View style={[styles.inputWrapper, isTimerRunning && styles.controlBtnDisabled]}>
+              <Text style={styles.durationColon}>:</Text>
+
+              {/* Hours */}
+              <View style={styles.durationBlock}>
                 <TextInput
-                  value={settings.countdownHours.toString()}
+                  value={settings.countdownHours.toString().padStart(2, '0')}
                   onChangeText={handleHoursChange}
                   keyboardType="number-pad"
-                  style={[styles.smallInput, isTimerRunning && { color: Colors.onSurfaceVariant }]}
+                  style={[styles.durationInput, isTimerRunning && styles.inputDisabled]}
                   editable={!isTimerRunning}
                   maxLength={2}
+                  selectTextOnFocus
                 />
-                <Text style={[styles.unitLabel, isTimerRunning && { color: Colors.onSurfaceVariant }]}>H</Text>
+                <Text style={styles.durationUnit}>HRS</Text>
               </View>
 
-              <View style={[styles.inputWrapper, isTimerRunning && styles.controlBtnDisabled]}>
+              <Text style={styles.durationColon}>:</Text>
+
+              {/* Minutes */}
+              <View style={styles.durationBlock}>
                 <TextInput
-                  value={settings.countdownMinutes.toString()}
+                  value={settings.countdownMinutes.toString().padStart(2, '0')}
                   onChangeText={handleMinutesChange}
                   keyboardType="number-pad"
-                  style={[styles.smallInput, isTimerRunning && { color: Colors.onSurfaceVariant }]}
+                  style={[styles.durationInput, isTimerRunning && styles.inputDisabled]}
                   editable={!isTimerRunning}
                   maxLength={2}
+                  selectTextOnFocus
                 />
-                <Text style={[styles.unitLabel, isTimerRunning && { color: Colors.onSurfaceVariant }]}>M</Text>
+                <Text style={styles.durationUnit}>MIN</Text>
               </View>
             </View>
+
+            {isTimerRunning && (
+              <Text style={styles.runningHint}>⏱ Timer is running — pause to edit</Text>
+            )}
           </View>
-          
+
+          {/* Action buttons */}
           <View style={styles.actionRow}>
             <TouchableOpacity style={styles.actionBtn} onPress={handleTogglePause}>
-              <MaterialIcons name={settings.timerPausedAt ? "play-arrow" : "pause"} size={22} color={Colors.primary} />
-              <Text style={styles.actionBtnText}>{settings.timerPausedAt ? "Resume" : "Pause"}</Text>
+              <MaterialIcons
+                name={settings.timerPausedAt ? 'play-arrow' : 'pause'}
+                size={22}
+                color={Colors.primary}
+              />
+              <Text style={styles.actionBtnText}>
+                {settings.timerPausedAt ? 'Resume' : 'Pause'}
+              </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.actionBtn, styles.actionBtnSecondary]} onPress={handleResetTimer}>
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.actionBtnSecondary]}
+              onPress={handleResetTimer}
+            >
               <MaterialIcons name="refresh" size={22} color={Colors.primary} />
               <Text style={styles.actionBtnText}>Reset</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>BACKGROUND ACTIVITY</Text>
-          <View style={styles.settingCard}>
-            <View>
-              <Text style={styles.settingLabel}>Running Status</Text>
-              <Text style={styles.settingDesc}>Keep timer notification active</Text>
-            </View>
-            <Switch 
-              value={settings.runInBackground} 
-              onValueChange={handleToggleBackground} 
-              trackColor={{ true: Colors.primary }}
-              disabled={isAndroid && isExpoGo && !settings.runInBackground}
-            />
-          </View>
-          {isAndroid && isExpoGo && (
-            <Text style={styles.warningText}>
-              Note: Persistent notifications require a Development Build on Android.
-            </Text>
-          )}
-        </View>
-
+        {/* ── ABOUT ── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>ABOUT</Text>
-          <View style={styles.settingCard}>
+          <View style={styles.settingCardRow}>
             <Text style={styles.settingLabel}>Version</Text>
             <Text style={styles.valueText}>1.0.0</Text>
           </View>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -195,24 +165,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  header: {
-    paddingHorizontal: 24,
-    height: 64,
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  headerText: {
-    color: Colors.primary,
-    fontSize: 18,
-    fontWeight: '300',
-    letterSpacing: 4,
-  },
   content: {
     paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 60,
     gap: 32,
   },
   section: {
-    gap: 16,
+    gap: 12,
   },
   sectionTitle: {
     color: Colors.onSurfaceVariant,
@@ -220,15 +180,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.5,
   },
+  // Card with stacked (column) layout for the duration pickers
   settingCard: {
+    backgroundColor: Colors.surfaceHigh,
+    borderRadius: 16,
+    padding: 20,
+    gap: 16,
+  },
+  // Card with row layout (for version)
+  settingCardRow: {
     backgroundColor: Colors.surfaceHigh,
     borderRadius: 16,
     padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 12,
   },
   settingLabel: {
     color: Colors.onSurface,
@@ -240,38 +206,55 @@ const styles = StyleSheet.create({
     color: Colors.onSurfaceVariant,
     fontSize: 11,
   },
-  controls: {
+  // Duration picker row
+  durationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-  },
-  controlBtnDisabled: {
-    opacity: 0.5,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surfaceLowest,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    justifyContent: 'center',
     gap: 4,
+    marginTop: 4,
   },
-  smallInput: {
+  durationBlock: {
+    alignItems: 'center',
+    gap: 4,
+    flex: 1,
+  },
+  durationInput: {
     color: Colors.primary,
-    fontSize: 16,
-    fontWeight: '700',
-    minWidth: 32,
+    fontSize: 28,
+    fontWeight: '800',
     textAlign: 'center',
+    backgroundColor: Colors.surfaceLowest,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    width: '100%',
   },
-  unitLabel: {
-    color: Colors.onSurface,
+  inputDisabled: {
+    color: Colors.onSurfaceVariant,
+    opacity: 0.6,
+  },
+  durationUnit: {
+    color: Colors.onSurfaceVariant,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  durationColon: {
+    color: Colors.onSurfaceVariant,
+    fontSize: 22,
+    fontWeight: '300',
+    marginBottom: 18,
+  },
+  runningHint: {
+    color: Colors.primary,
     fontSize: 11,
-    fontWeight: '600',
+    textAlign: 'center',
+    opacity: 0.7,
   },
   actionRow: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 12,
   },
   actionBtn: {
     flex: 1,
@@ -298,11 +281,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  warningText: {
-    color: Colors.error || '#ff4444',
-    fontSize: 10,
-    marginTop: 8,
-    fontStyle: 'italic',
-    opacity: 0.8,
-  }
 });

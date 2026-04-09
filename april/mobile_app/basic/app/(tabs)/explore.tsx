@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 import { StatusBar } from 'expo-status-bar';
-import { useStore, TimeBlock } from '@/store/useStore';
+import { useStore } from '@/store/useStore';
 import { MaterialIcons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 

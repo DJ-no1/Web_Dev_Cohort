@@ -1,0 +1,26 @@
+# Local development and environment
+.env
+.vscode/
+.temp/
+temp/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Documentation and meta
+README.md
+.gitignore
+LICENSE
+CHANGELOG.md
+
+# Git
+.git/
+
+# Build and Expo
+node_modules/
+.expo/
+dist/
+web-build/
+ios/
+android/
