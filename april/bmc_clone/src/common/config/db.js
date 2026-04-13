@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { initializeSeats } from "../../modules/booking_movie/seat.service.js";
 
 const connectDB = async () => {
   // If the connection string does not include a database name, prefer an explicit env var.
@@ -9,6 +10,10 @@ const connectDB = async () => {
   console.log(
     `MongoDB connected: ${conn.connection.host}/${conn.connection.name}`,
   );
+
+  // Initialize seats on connection
+  await initializeSeats();
+  console.log("Seats initialized");
 };
 
 export default connectDB;
