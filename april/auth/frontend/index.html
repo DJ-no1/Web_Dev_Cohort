@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>BMC Clone — Test UI</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;max-width:1000px;margin:18px auto;padding:18px;background:#f4f6f8}
+    .grid{display:grid;grid-template-columns:1fr 420px;gap:14px}
+    .card{background:#fff;padding:12px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+    input,select,button{width:100%;padding:8px;margin:6px 0;border:1px solid #ddd;border-radius:4px}
+    button{cursor:pointer}
+    pre{background:#f2f2f2;padding:10px;border-radius:6px;white-space:pre-wrap}
+    .small{font-size:13px;color:#555}
+  </style>
+</head>
+<body>
+  <h1>BMC Clone — Manual Test UI</h1>
+  <p class="small">Backend base URL: <input id="baseUrl" value="http://localhost:5000/api/auth" /></p>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Register</h3>
+      <form id="registerForm">
+        <input name="name" placeholder="Name" required />
+        <input name="email" placeholder="Email" required />
+        <input name="password" placeholder="Password (Min 8, 1 uppercase, 1 digit)" type="password" required />
+        <select name="role"><option value="customer">customer</option><option value="seller">seller</option></select>
+        <button>Register</button>
+      </form>
+
+      <h3>Login</h3>
+      <form id="loginForm">
+        <input name="email" placeholder="Email" required />
+        <input name="password" placeholder="Password" type="password" required />
+        <button>Login</button>
+      </form>
+
+      <button id="logoutBtn">Logout</button>
+
+      <hr />
+      <h4>Forgot / Reset</h4>
+      <form id="forgotForm">
+        <input name="email" placeholder="Email for reset" required />
+        <button>Send Reset Email</button>
+      </form>
+
+      <form id="resetForm">
+        <input name="token" placeholder="Reset token from email" />
+        <input name="password" placeholder="New password" type="password" />
+        <button>Reset Password</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>Profile / Tokens</h3>
+      <button id="meBtn">Get /me</button>
+      <button id="refreshBtn">Refresh Token</button>
+      <pre id="output">Output will appear here</pre>
+
+      <hr />
+      <h4>Verify Email (token)</h4>
+      <form id="verifyForm">
+        <input name="token" placeholder="Verification token from email" />
+        <button>Verify</button>
+      </form>
+    </div>
+  </div>
+
+<script>
+const out = v => document.getElementById('output').textContent = JSON.stringify(v, null, 2)
+const base = () => document.getElementById('baseUrl').value.replace(/\/$/,'')
+const getAccess = () => localStorage.getItem('accessToken')
+const setAccess = t => t ? localStorage.setItem('accessToken', t) : localStorage.removeItem('accessToken')
+
+async function api(path, opts = {}) {
+  const url = base() + path
+  opts.headers = opts.headers || {}
+  if (opts.body && typeof opts.body === 'object' && !(opts.body instanceof FormData)) {
+    opts.headers['Content-Type'] = 'application/json'
+    opts.body = JSON.stringify(opts.body)
+  }
+  // include cookies for refresh/login/logout (server sets httpOnly cookie)
+  opts.credentials = opts.credentials || 'include'
+  const res = await fetch(url, opts)
+  const contentType = res.headers.get('content-type') || ''
+  const data = contentType.includes('application/json') ? await res.json() : await res.text()
+  if (!res.ok) throw data
+  return data
+}
+
+document.getElementById('registerForm').addEventListener('submit', async e => {
+  e.preventDefault()
+  const payload = Object.fromEntries(new FormData(e.target))
+  try { out(await api('/register', { method:'POST', body: payload })) } catch(err){ out(err) }
+})
+
+document.getElementById('loginForm').addEventListener('submit', async e => {
+  e.preventDefault()
+  const payload = Object.fromEntries(new FormData(e.target))
+  try {
+    const r = await api('/login', { method:'POST', body: payload })
+    out(r)
+    const token = r.data?.accessToken
+    if (token) setAccess(token)
+  } catch(err){ out(err) }
+})
+
+document.getElementById('meBtn').addEventListener('click', async () => {
+  try {
+    const token = getAccess()
+    out(await api('/me', { headers: { Authorization: 'Bearer ' + token } }))
+  } catch(err){ out(err) }
+})
+
+document.getElementById('refreshBtn').addEventListener('click', async () => {
+  try {
+    const r = await api('/refresh-token', { method:'POST' })
+    out(r)
+    const token = r.data?.accessToken
+    if (token) setAccess(token)
+  } catch(err){ out(err) }
+})
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  try {
+    const token = getAccess()
+    const r = await api('/logout', { method:'POST', headers: { Authorization: 'Bearer ' + token } })
+    setAccess(null)
+    out(r)
+  } catch(err){ out(err) }
+})
+
+document.getElementById('forgotForm').addEventListener('submit', async e => {
+  e.preventDefault()
+  const payload = Object.fromEntries(new FormData(e.target))
+  try { out(await api('/forgot-password', { method:'POST', body: payload })) } catch(err){ out(err) }
+})
+
+document.getElementById('resetForm').addEventListener('submit', async e => {
+  e.preventDefault()
+  const fd = new FormData(e.target)
+  const token = fd.get('token') || ''
+  const password = fd.get('password')
+  try { out(await api('/reset-password/' + encodeURIComponent(token), { method:'PUT', body: { password } })) } catch(err){ out(err) }
+})
+
+document.getElementById('verifyForm').addEventListener('submit', async e => {
+  e.preventDefault()
+  const token = new FormData(e.target).get('token') || ''
+  try { out(await api('/verify-email/' + encodeURIComponent(token), { method:'GET' })) } catch(err){ out(err) }
+})
+</script>
+</body>
+</html>
