@@ -77,6 +77,7 @@
     </div>
   </div>
 
+  <script src="/auth-fragment.js"></script>
   <script>
     async function loadProfile() {
       const token = localStorage.getItem('accessToken');
@@ -136,9 +137,12 @@
       window.location.href = `/${page}`;
     }
 
-    // Initialize
-    loadProfile();
-    loadStats();
+    // Initialize — consume OIDC hash before any auth check
+    (async function init() {
+      await initOidcReturnFromHash();
+      loadProfile();
+      loadStats();
+    })();
   </script>
 </body>
 

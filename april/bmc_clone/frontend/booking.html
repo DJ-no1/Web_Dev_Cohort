@@ -89,6 +89,7 @@
     </div>
   </div>
 
+  <script src="/auth-fragment.js"></script>
   <script>
     const PRICE_PER_SEAT = 250;
     let selectedSeats = new Set();
@@ -204,13 +205,16 @@
       return params.get('show') || '1';
     }
 
-    // Initialize
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      window.location.href = '/login';
-    } else {
-      loadSeats();
-    }
+    // Initialize (OIDC hash before auth check)
+    (async function init() {
+      await initOidcReturnFromHash();
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        window.location.href = '/login';
+      } else {
+        loadSeats();
+      }
+    })();
   </script>
 </body>
 

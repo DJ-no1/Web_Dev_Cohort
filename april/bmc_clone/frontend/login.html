@@ -48,6 +48,25 @@
       </button>
     </form>
 
+    <div id="oidcSection" class="mt-6">
+      <div class="relative flex items-center gap-3 py-2">
+        <div class="h-px flex-1 bg-slate-600"></div>
+        <span class="text-xs uppercase tracking-wider text-slate-500">or</span>
+        <div class="h-px flex-1 bg-slate-600"></div>
+      </div>
+      <a id="oidcLoginBtn" href="/api/auth/oidc/login"
+        class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-600 bg-slate-900/50 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-violet-500/60 hover:bg-slate-800/80 hover:text-white">
+        <svg class="h-5 w-5 shrink-0 text-violet-400" fill="none" stroke="currentColor" stroke-width="2"
+          viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+        Continue with OpenID Connect
+      </a>
+      <p id="oidcHint" class="mt-2 text-center text-xs text-slate-500">Opens <code
+          class="rounded bg-slate-900/80 px-1 text-violet-300">/api/auth/oidc/login</code> — your browser will follow redirects to the IdP and back.</p>
+    </div>
+
     <div id="errorMessage"
       class="mt-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm hidden"></div>
 
@@ -61,7 +80,24 @@
     </p>
   </div>
 
+  <script src="/auth-fragment.js"></script>
   <script>
+    (function showOidcUrlError() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const oidcErr = params.get('oidc_error');
+        if (!oidcErr) return;
+        const errBox = document.getElementById('errorMessage');
+        if (errBox) {
+          errBox.textContent = oidcErr;
+          errBox.classList.remove('hidden');
+        }
+        const url = new URL(window.location.href);
+        url.searchParams.delete('oidc_error');
+        history.replaceState(null, '', url.pathname + url.search + url.hash);
+      } catch (_) { /* ignore */ }
+    })();
+
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const errorMsg = document.getElementById('errorMessage');
@@ -93,6 +129,13 @@
         errorMsg.classList.remove('hidden');
       }
     });
+
+    (async function consumeOidcOnLoginPage() {
+      await initOidcReturnFromHash();
+      if (localStorage.getItem('accessToken')) {
+        window.location.replace('/dashboard');
+      }
+    })();
   </script>
 </body>
 

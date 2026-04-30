@@ -45,8 +45,10 @@
     </div>
   </div>
 
+  <script src="/auth-fragment.js"></script>
   <script>
     async function loadBookings() {
+      await initOidcReturnFromHash();
       const token = localStorage.getItem('accessToken');
       if (!token) {
         window.location.href = '/login';

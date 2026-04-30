@@ -19,6 +19,7 @@ const login = async (req, res) => {
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: "/",
   });
 
   ApiResponse.ok(res, "Login successful", { user, accessToken });
@@ -32,7 +33,7 @@ const refreshToken = async (req, res) => {
 
 const logout = async (req, res) => {
   await authService.logout(req.user.id);
-  res.clearCookie("refreshToken");
+  res.clearCookie("refreshToken", { path: "/" });
   ApiResponse.ok(res, "Logged out successfully");
 };
 

@@ -80,6 +80,7 @@
     </div>
   </div>
 
+  <script src="/auth-fragment.js"></script>
   <script>
     // Check authentication
     function checkAuth() {
@@ -154,10 +155,13 @@
       window.location.href = '/login';
     }
 
-    // Initialize
-    checkAuth();
-    loadUserInfo();
-    loadBookingCount();
+    // Initialize (OIDC hash must be consumed before checkAuth)
+    (async function init() {
+      await initOidcReturnFromHash();
+      checkAuth();
+      loadUserInfo();
+      loadBookingCount();
+    })();
   </script>
 </body>
 

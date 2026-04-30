@@ -1,5 +1,6 @@
 import { Router } from "express";
 import * as controller from "./auth.controller.js";
+import * as oidcController from "./oidc.controller.js";
 import { authenticate } from "./auth.middleware.js";
 import validate from "../../common/middleware/validate.middleware.js";
 import RegisterDto from "./dto/register.dto.js";
@@ -8,6 +9,12 @@ import ForgotPasswordDto from "./dto/forgot-password.dto.js";
 import ResetPasswordDto from "./dto/reset-password.dto.js";
 
 const router = Router();
+
+router.get("/oidc/status", oidcController.oidcStatus);
+router.get("/oidc/login", oidcController.startOidcLogin);
+router.get("/oidc/callback", oidcController.oidcCallback);
+
+
 
 router.post("/register", validate(RegisterDto), controller.register);
 router.post("/login", validate(LoginDto), controller.login);
