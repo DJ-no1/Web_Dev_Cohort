@@ -1,0 +1,58 @@
+{
+  "statusCode": 200,
+  "data": {
+    "gender": "male",
+    "name": {
+      "title": "Mr",
+      "first": "Julio",
+      "last": "Monroy"
+    },
+    "location": {
+      "street": {
+        "number": 4913,
+        "name": "Calzada Islas Marshall"
+      },
+      "city": "Cosamaloapan",
+      "state": "Hidalgo",
+      "country": "Mexico",
+      "postcode": 66593,
+      "coordinates": {
+        "latitude": "-37.7885",
+        "longitude": "-95.5790"
+      },
+      "timezone": {
+        "offset": "-6:00",
+        "description": "Central Time (US & Canada), Mexico City"
+      }
+    },
+    "email": "julio.monroy@example.com",
+    "login": {
+      "uuid": "182f1982-2dba-4f25-be86-f9dbad5dc693",
+      "username": "orangebear717",
+      "password": "mulder",
+      "salt": "JMhiLzu2",
+      "md5": "08fe81c36451f6a8268ce987835d0969",
+      "sha1": "70f3c0f543bac7bb69e7b670e4f01115520a86bf",
+      "sha256": "d28137da89ce92fd524088f0492f18db8e6a49687a740a4ad21f374213d8e872"
+    },
+    "dob": {
+      "date": "1999-01-17T19:35:12.375Z",
+      "age": 24
+    },
+    "registered": {
+      "date": "2020-06-30T10:32:51.945Z",
+      "age": 2
+    },
+    "phone": "(696) 779 7880",
+    "cell": "(687) 039 3382",
+    "id": 388,
+    "picture": {
+      "large": "https://randomuser.me/api/portraits/men/69.jpg",
+      "medium": "https://randomuser.me/api/portraits/med/men/69.jpg",
+      "thumbnail": "https://randomuser.me/api/portraits/thumb/men/69.jpg"
+    },
+    "nat": "MX"
+  },
+  "message": "Random user fetched successfully",
+  "success": true
+}
