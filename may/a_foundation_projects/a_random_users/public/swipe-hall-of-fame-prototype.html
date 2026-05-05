@@ -1,0 +1,1393 @@
+
+<!doctype html>
+<html lang="en">
+<head><script>(function(){
+  function makeStore(){
+    var data = {};
+    var api = {
+      getItem: function(k){ return Object.prototype.hasOwnProperty.call(data, k) ? data[k] : null; },
+      setItem: function(k, v){ data[k] = String(v); },
+      removeItem: function(k){ delete data[k]; },
+      clear: function(){ data = {}; },
+      key: function(i){ return Object.keys(data)[i] || null; }
+    };
+    Object.defineProperty(api, 'length', { get: function(){ return Object.keys(data).length; } });
+    return api;
+  }
+  function tryShim(name){
+    var works = false;
+    try { works = !!window[name] && typeof window[name].getItem === 'function'; void window[name].length; }
+    catch (_) { works = false; }
+    if (works) return;
+    try { Object.defineProperty(window, name, { configurable: true, value: makeStore() }); }
+    catch (_) { try { window[name] = makeStore(); } catch (__) {} }
+  }
+  tryShim('localStorage');
+  tryShim('sessionStorage');
+})();</script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Swipe Hall of Fame</title>
+  <style>
+    :root {
+      --bg: oklch(96% 0.004 100);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(15% 0.02 100);
+      --muted: oklch(40% 0.02 100);
+      --border: oklch(15% 0.02 100);
+      --accent: oklch(60% 0.22 25);
+      --font-display: 'Times New Roman', 'Iowan Old Style', Georgia, serif;
+      --font-body: ui-monospace, 'IBM Plex Mono', 'JetBrains Mono', Menlo, monospace;
+
+      --app-bg: #09090b;
+      --app-surface: #18181b;
+      --app-fg: #fafafa;
+      --app-muted: #a1a1aa;
+      --app-border: #27272a;
+      --like: oklch(71% 0.19 148);
+      --dislike: oklch(64% 0.23 28);
+      --rank-gold: oklch(77% 0.13 88);
+      --rank-silver: oklch(72% 0.02 255);
+      --rank-bronze: oklch(63% 0.11 52);
+
+      --arena-ratio: 65%;
+      --card-radius: 30px;
+      --motion-duration: 560ms;
+      --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+      --motion-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --button-glow: 1;
+      --drawer-offset: 100%;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      background: var(--app-bg);
+      color: var(--app-fg);
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+      overflow: hidden;
+      text-rendering: geometricPrecision;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-shell {
+      height: 100dvh;
+      display: grid;
+      grid-template-columns: minmax(0, var(--arena-ratio)) minmax(340px, 1fr);
+      background: var(--app-bg);
+    }
+
+    .arena {
+      position: relative;
+      border-right: 1px solid var(--app-border);
+      display: grid;
+      place-items: center;
+      padding: clamp(20px, 2.6vw, 36px);
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 12%, rgba(34, 197, 94, 0.12) 0%, transparent 42%),
+        radial-gradient(circle at 20% 70%, rgba(239, 68, 68, 0.08) 0%, transparent 45%),
+        var(--app-bg);
+    }
+
+    .decision-flash {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 1;
+    }
+
+    .decision-flash.is-like {
+      animation: decisionFlashLike 520ms var(--motion-ease);
+    }
+
+    .decision-flash.is-dislike {
+      animation: decisionFlashDislike 520ms var(--motion-ease);
+    }
+
+    .arena-inner {
+      width: min(100%, 540px);
+      display: grid;
+      gap: 20px;
+      justify-items: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .profile-card {
+      position: relative;
+      width: min(88vw, 460px);
+      height: min(67dvh, 670px);
+      border-radius: var(--card-radius);
+      border: 1px solid rgba(250, 250, 250, 0.17);
+      box-shadow: 0 38px 72px rgba(0, 0, 0, 0.52), 0 0 0 1px rgba(24, 24, 27, 0.5);
+      overflow: hidden;
+      touch-action: none;
+      cursor: grab;
+      user-select: none;
+      transform: translate3d(0, 0, 0);
+      transition: transform var(--motion-duration) var(--motion-ease), filter 220ms ease, box-shadow 300ms ease;
+      background: #111;
+      isolation: isolate;
+      will-change: transform;
+    }
+
+    .profile-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      mix-blend-mode: screen;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .profile-card.is-entering {
+      animation: cardEnter 560ms var(--motion-spring);
+    }
+
+    .profile-card.is-dragging {
+      cursor: grabbing;
+      transition: none;
+      filter: saturate(1.1);
+      box-shadow: 0 30px 76px rgba(0, 0, 0, 0.6);
+    }
+
+    .profile-media {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      transition: transform 360ms var(--motion-ease);
+    }
+
+    .profile-card.is-dragging .profile-media {
+      transform: scale(1.03);
+    }
+
+    .profile-media::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to top, rgba(0, 0, 0, 0.86) 6%, rgba(0, 0, 0, 0.6) 32%, rgba(0, 0, 0, 0.1) 58%, transparent 76%),
+        linear-gradient(to bottom, rgba(0, 0, 0, 0.42), transparent 22%);
+    }
+
+    .profile-top-meta {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      right: 18px;
+      display: flex;
+      gap: 8px;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .meta-pill {
+      display: inline-flex;
+      align-items: center;
+      height: 30px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      background: rgba(9, 9, 11, 0.5);
+      color: #fafafa;
+      font-size: 0.76rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      backdrop-filter: blur(6px);
+    }
+
+    .meta-pill-compat {
+      margin-left: auto;
+      border-color: color-mix(in oklch, var(--like) 50%, white 10%);
+      color: color-mix(in oklch, var(--like) 75%, white 20%);
+    }
+
+    .stamp {
+      position: absolute;
+      top: 70px;
+      font-size: 0.92rem;
+      letter-spacing: 0.2em;
+      font-weight: 760;
+      padding: 11px 14px;
+      border: 2px solid currentColor;
+      text-transform: uppercase;
+      border-radius: 2px;
+      opacity: 0;
+      transform-origin: center;
+      transition: opacity 90ms linear;
+      pointer-events: none;
+      z-index: 5;
+      text-shadow: 0 0 18px currentColor;
+    }
+
+    .stamp-nope {
+      left: 24px;
+      color: var(--dislike);
+      transform: rotate(-10deg) scale(0.9);
+    }
+
+    .stamp-like {
+      right: 24px;
+      color: var(--like);
+      transform: rotate(10deg) scale(0.9);
+    }
+
+    .profile-overlay {
+      position: absolute;
+      inset-inline: 0;
+      bottom: 0;
+      z-index: 4;
+      padding: 24px 24px 20px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .profile-name {
+      margin: 0;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      font-size: clamp(2.2rem, 4vw, 2.75rem);
+      line-height: 1;
+      color: #fff;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      text-wrap: balance;
+    }
+
+    .profile-age {
+      color: color-mix(in oklch, white 82%, var(--app-muted));
+      font-weight: 560;
+      font-size: 0.92em;
+    }
+
+    .profile-location {
+      margin: 0;
+      color: #a1a1aa;
+      font-size: 0.95rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 0.02em;
+    }
+
+    .profile-location svg {
+      width: 15px;
+      height: 15px;
+      stroke-width: 2;
+      color: color-mix(in oklch, #a1a1aa 80%, white);
+    }
+
+    .profile-title {
+      margin: 2px 0 0;
+      color: #d4d4d8;
+      font-size: 0.85rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 550;
+    }
+
+    .profile-info-band {
+      width: min(88vw, 460px);
+      border-radius: 18px;
+      border: 1px solid rgba(39, 39, 42, 0.9);
+      background: rgba(24, 24, 27, 0.92);
+      padding: 14px 16px 16px;
+      display: grid;
+      gap: 12px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
+    }
+
+    .profile-about {
+      margin: 0;
+      color: #d4d4d8;
+      font-size: 0.93rem;
+      line-height: 1.45;
+    }
+
+    .interest-list {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .interest-chip {
+      display: inline-flex;
+      align-items: center;
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid #3f3f46;
+      background: #111115;
+      color: #e4e4e7;
+      font-size: 0.74rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 560;
+    }
+
+    .action-row {
+      width: min(88vw, 460px);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .action-btn {
+      min-height: 68px;
+      border-radius: 18px;
+      border: 1.6px solid currentColor;
+      background: linear-gradient(to bottom, rgba(24, 24, 27, 0.95), rgba(9, 9, 11, 0.95));
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      transition: transform 220ms var(--motion-spring), box-shadow 220ms ease, border-color 180ms ease, background 180ms ease;
+      padding: 0 14px;
+      position: relative;
+      overflow: hidden;
+      text-align: left;
+    }
+
+    .action-btn::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, rgba(255, 255, 255, 0.08), transparent 36%);
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
+    .action-btn:active {
+      transform: scale(0.97);
+    }
+
+    .action-btn-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1.4px solid currentColor;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+
+    .action-btn-icon svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2.1;
+    }
+
+    .action-btn-copy {
+      display: grid;
+      gap: 2px;
+      line-height: 1;
+    }
+
+    .action-btn-copy strong {
+      font-size: 0.95rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #fafafa;
+      font-weight: 700;
+    }
+
+    .action-btn-copy small {
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #a1a1aa;
+      font-weight: 560;
+    }
+
+    .action-btn-dislike {
+      color: var(--dislike);
+      box-shadow: 0 0 calc(22px * var(--button-glow)) color-mix(in oklch, var(--dislike) 25%, transparent);
+    }
+
+    .action-btn-like {
+      color: var(--like);
+      box-shadow: 0 0 calc(26px * var(--button-glow)) color-mix(in oklch, var(--like) 30%, transparent);
+    }
+
+    .action-btn-dislike:hover {
+      background: linear-gradient(to bottom, rgba(76, 20, 20, 0.35), rgba(9, 9, 11, 0.96));
+      transform: translateY(-2px);
+      border-color: color-mix(in oklch, var(--dislike) 80%, white);
+    }
+
+    .action-btn-like:hover {
+      background: linear-gradient(to bottom, rgba(18, 84, 48, 0.35), rgba(9, 9, 11, 0.96));
+      transform: translateY(-2px);
+      border-color: color-mix(in oklch, var(--like) 80%, white);
+    }
+
+    .leaderboard {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      background: var(--app-surface);
+      min-height: 0;
+    }
+
+    .leaderboard-head {
+      padding: 26px 24px 18px;
+      border-bottom: 1px solid var(--app-border);
+      display: grid;
+      gap: 8px;
+    }
+
+    .leaderboard-title {
+      margin: 0;
+      color: var(--app-fg);
+      font-weight: 780;
+      font-size: clamp(1.14rem, 1.4vw, 1.44rem);
+      letter-spacing: -0.02em;
+    }
+
+    .leaderboard-subtitle {
+      margin: 0;
+      color: var(--app-muted);
+      font-size: 0.84rem;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .leaderboard-body {
+      min-height: 0;
+      overflow: auto;
+      position: relative;
+      padding: 16px 14px 18px;
+    }
+
+    .empty-state {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-content: center;
+      justify-items: center;
+      gap: 14px;
+      color: color-mix(in oklch, var(--app-muted) 82%, black);
+      text-align: center;
+      padding: 16px;
+    }
+
+    .empty-state svg {
+      width: 30px;
+      height: 30px;
+      stroke-width: 1.7;
+      opacity: 0.68;
+    }
+
+    .empty-state p {
+      margin: 0;
+      font-size: 0.96rem;
+      color: #71717a;
+    }
+
+    .score-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 6px;
+    }
+
+    .score-row {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 28px 34px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 10px;
+      border: 1px solid transparent;
+      border-radius: 5px;
+      background: transparent;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: background 170ms ease, border-color 170ms ease;
+    }
+
+    .score-row:hover {
+      background: #232329;
+      border-color: color-mix(in oklch, var(--app-border) 72%, transparent);
+    }
+
+    .rank {
+      font-variant-numeric: tabular-nums;
+      font-size: 0.89rem;
+      font-weight: 660;
+      color: #a1a1aa;
+    }
+
+    .rank-top1 {
+      color: var(--rank-gold);
+    }
+
+    .rank-top2 {
+      color: var(--rank-silver);
+    }
+
+    .rank-top3 {
+      color: var(--rank-bronze);
+    }
+
+    .avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in oklch, var(--app-border) 68%, transparent);
+      background-size: cover;
+      background-position: center;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    }
+
+    .row-name {
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #fafafa;
+      font-size: 0.95rem;
+    }
+
+    .row-score {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-variant-numeric: tabular-nums;
+      color: #f4f4f5;
+      font-weight: 650;
+      font-size: 0.92rem;
+      justify-self: end;
+    }
+
+    .row-score svg {
+      width: 14px;
+      height: 14px;
+      fill: var(--like);
+      color: var(--like);
+      stroke: var(--like);
+      stroke-width: 1.2;
+    }
+
+    .mobile-topbar {
+      display: none;
+      position: absolute;
+      inset-inline: 0;
+      top: 0;
+      z-index: 30;
+      padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(to bottom, rgba(9, 9, 11, 0.92), rgba(9, 9, 11, 0.66) 75%, transparent);
+    }
+
+    .logo-wordmark {
+      margin: 0;
+      font-family: var(--font-body);
+      letter-spacing: 0.24em;
+      font-size: 0.86rem;
+      color: #fafafa;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .trophy-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      border: 1px solid var(--app-border);
+      background: rgba(24, 24, 27, 0.8);
+      color: #f4f4f5;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: background 150ms ease, transform 120ms ease;
+    }
+
+    .trophy-btn:hover {
+      background: #24242b;
+    }
+
+    .trophy-btn:active {
+      transform: scale(0.96);
+    }
+
+    .trophy-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 1.8;
+    }
+
+    .backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 2, 3, 0.75);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--motion-duration) var(--motion-ease);
+      z-index: 40;
+    }
+
+    .tweaks {
+      position: fixed;
+      left: max(12px, env(safe-area-inset-left));
+      bottom: max(12px, env(safe-area-inset-bottom));
+      z-index: 70;
+      width: 248px;
+      background: rgba(24, 24, 27, 0.96);
+      border: 1px solid var(--app-border);
+      box-shadow: 0 10px 32px rgba(0, 0, 0, 0.28);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .tweaks button {
+      all: unset;
+      cursor: pointer;
+    }
+
+    .tweaks-toggle {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 11px;
+      border-bottom: 1px solid var(--app-border);
+      font-size: 0.76rem;
+      letter-spacing: 0.1em;
+      color: #d4d4d8;
+      text-transform: uppercase;
+      font-family: var(--font-body);
+    }
+
+    .tweaks-body {
+      padding: 11px;
+      display: grid;
+      gap: 9px;
+    }
+
+    .tweaks.is-collapsed .tweaks-body {
+      display: none;
+    }
+
+    .field {
+      display: grid;
+      gap: 5px;
+      color: #a1a1aa;
+      font-size: 0.73rem;
+      letter-spacing: 0.02em;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      background: #0f0f12;
+      color: #fafafa;
+      border: 1px solid #27272a;
+      border-radius: 2px;
+      padding: 7px 8px;
+      font: inherit;
+    }
+
+    .field-inline {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .field-inline input {
+      width: auto;
+      accent-color: #22c55e;
+    }
+
+    @keyframes cardEnter {
+      0% {
+        transform: translate3d(0, 32px, 0) scale(0.95);
+        opacity: 0;
+      }
+      72% {
+        transform: translate3d(0, -6px, 0) scale(1.01);
+        opacity: 1;
+      }
+      100% {
+        transform: translate3d(0, 0, 0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes decisionFlashLike {
+      0% {
+        opacity: 0;
+      }
+      24% {
+        opacity: 0.22;
+        background: radial-gradient(circle at 42% 48%, rgba(34, 197, 94, 0.32), transparent 58%);
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+
+    @keyframes decisionFlashDislike {
+      0% {
+        opacity: 0;
+      }
+      24% {
+        opacity: 0.2;
+        background: radial-gradient(circle at 58% 48%, rgba(239, 68, 68, 0.28), transparent 58%);
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .app-shell {
+        display: block;
+      }
+
+      .arena {
+        border-right: none;
+        height: 100dvh;
+        padding-top: calc(58px + env(safe-area-inset-top));
+      }
+
+      .mobile-topbar {
+        display: flex;
+      }
+
+      .leaderboard {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: min(80vw, 360px);
+        height: 100dvh;
+        transform: translateX(var(--drawer-offset));
+        transition: transform var(--motion-duration) var(--motion-ease);
+        z-index: 50;
+        border-left: 1px solid var(--app-border);
+      }
+
+      body.drawer-open .leaderboard {
+        --drawer-offset: 0%;
+      }
+
+      body.drawer-open .backdrop {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .profile-card,
+      .profile-info-band,
+      .action-row {
+        width: min(92vw, 460px);
+      }
+
+      .profile-card {
+        height: min(68dvh, 640px);
+      }
+
+      .tweaks {
+        width: 220px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      :root {
+        --motion-duration: 0ms;
+      }
+      * {
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell" id="app">
+    <header class="mobile-topbar">
+      <p class="logo-wordmark">SWIPE</p>
+      <button class="trophy-btn" id="openDrawer" aria-label="Open leaderboard">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M7 4h10v3a4 4 0 0 1-4 4h-2a4 4 0 0 1-4-4V4Z" stroke="currentColor"></path>
+          <path d="M9 11v2.5a3 3 0 0 0 6 0V11" stroke="currentColor"></path>
+          <path d="M5 5H3.5A1.5 1.5 0 0 0 2 6.5v.8A3.7 3.7 0 0 0 5.7 11H7" stroke="currentColor"></path>
+          <path d="M19 5h1.5A1.5 1.5 0 0 1 22 6.5v.8a3.7 3.7 0 0 1-3.7 3.7H17" stroke="currentColor"></path>
+          <path d="M10 20h4M12 16v4" stroke="currentColor"></path>
+        </svg>
+      </button>
+    </header>
+
+    <main class="arena">
+      <div class="decision-flash" id="decisionFlash"></div>
+      <div class="arena-inner">
+        <article class="profile-card" id="profileCard" aria-live="polite">
+          <div class="profile-media" id="profileMedia"></div>
+          <div class="profile-top-meta">
+            <span class="meta-pill" id="profileDistance">12 km away</span>
+            <span class="meta-pill meta-pill-compat" id="profileCompatibility">91% match</span>
+          </div>
+          <div class="stamp stamp-nope" id="stampNope">Nope</div>
+          <div class="stamp stamp-like" id="stampLike">Like</div>
+          <footer class="profile-overlay">
+            <h1 class="profile-name"><span id="profileName">Joseph</span><span class="profile-age" id="profileAge">54</span></h1>
+            <p class="profile-location">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor"></path>
+                <circle cx="12" cy="10" r="2.2" stroke="currentColor"></circle>
+              </svg>
+              <span id="profileLocation">Hastings, New Zealand</span>
+            </p>
+            <p class="profile-title" id="profileTitle">Adventure Guide • Photographer</p>
+          </footer>
+        </article>
+
+        <section class="profile-info-band" aria-live="polite">
+          <p class="profile-about" id="profileAbout">Mountain sunrise chaser, jazz vinyl collector, and unapologetic road-trip planner.</p>
+          <div class="interest-list" id="profileInterests"></div>
+        </section>
+
+        <div class="action-row" role="group" aria-label="Swipe decisions">
+          <button class="action-btn action-btn-dislike" id="dislikeBtn" aria-label="Dislike profile">
+            <span class="action-btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="m5 5 14 14M19 5 5 19" stroke="currentColor"></path>
+              </svg>
+            </span>
+            <span class="action-btn-copy">
+              <strong>Pass</strong>
+              <small>Swipe left</small>
+            </span>
+          </button>
+          <button class="action-btn action-btn-like" id="likeBtn" aria-label="Like profile">
+            <span class="action-btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12.2 20s-7.2-4.9-9.4-8.4C1 8.9 2.3 5.6 5.5 5.2c2-.3 3.3.7 4 2 0 0 .6-1 1.5-1.5 1-.6 2-.8 3-.5 3.1.6 4.4 4 2.5 6.8-2.3 3.5-8.8 8-8.8 8Z" stroke="currentColor"></path>
+              </svg>
+            </span>
+            <span class="action-btn-copy">
+              <strong>Like</strong>
+              <small>Swipe right</small>
+            </span>
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <aside class="leaderboard" id="leaderboardPanel" aria-label="Top 10 Hall of Fame">
+      <header class="leaderboard-head">
+        <h2 class="leaderboard-title">Top 10 Hall of Fame</h2>
+        <p class="leaderboard-subtitle">Real-time likes leaderboard</p>
+      </header>
+      <section class="leaderboard-body">
+        <div class="empty-state" id="emptyState">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M8 6h8M6 10h12M6 14h8M6 18h10" stroke="currentColor"></path>
+            <rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor"></rect>
+          </svg>
+          <p>No likes yet. Start swiping.</p>
+        </div>
+        <ul class="score-list" id="scoreList" aria-live="polite"></ul>
+      </section>
+    </aside>
+  </div>
+
+  <button class="backdrop" id="drawerBackdrop" aria-label="Close leaderboard"></button>
+
+  <section class="tweaks is-collapsed" id="tweaksPanel" aria-label="Prototype tweak controls">
+    <button class="tweaks-toggle" id="tweaksToggle" aria-expanded="false">
+      <span>Tweaks</span>
+      <span id="tweaksIndicator">+</span>
+    </button>
+    <div class="tweaks-body">
+      <label class="field">Motion profile
+        <select id="motionSelect">
+          <option value="subtle">Subtle</option>
+          <option value="moderate">Moderate</option>
+          <option value="high" selected>High polish</option>
+        </select>
+      </label>
+      <label class="field">Card corner radius
+        <input id="radiusRange" type="range" min="16" max="40" step="1" value="30">
+      </label>
+      <label class="field">Arena width split
+        <input id="splitRange" type="range" min="58" max="72" step="1" value="65">
+      </label>
+      <label class="field-inline">
+        <input id="glowToggle" type="checkbox" checked>
+        <span>Button glow</span>
+      </label>
+    </div>
+  </section>
+
+  <script>
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "motionProfile": "high",
+      "cardRadius": 30,
+      "arenaSplit": 65,
+      "buttonGlow": true
+    }/*EDITMODE-END*/;
+
+    // Replace this with your exact names/photos/scores when ready.
+    const PROFILE_DATA = [
+      {
+        id: "joseph",
+        name: "Joseph",
+        age: 54,
+        location: "Hastings, New Zealand",
+        title: "Adventure Guide • Photographer",
+        distance: "12 km away",
+        compatibility: "91% match",
+        about: "Mountain sunrise chaser, jazz vinyl collector, and unapologetic road-trip planner.",
+        interests: ["Hiking", "Film", "Jazz", "Road Trips"],
+        photo: "",
+        avatar: "",
+        palette: ["#1f2937", "#4b5563"],
+        score: 0
+      },
+      {
+        id: "maya",
+        name: "Maya",
+        age: 31,
+        location: "Nelson, New Zealand",
+        title: "Ceramic Artist • Weekend Diver",
+        distance: "6 km away",
+        compatibility: "88% match",
+        about: "Builds tiny ceramic worlds by day, dives and sketches coastal life on weekends.",
+        interests: ["Ceramics", "Scuba", "Sketchbooks", "Slow Food"],
+        photo: "",
+        avatar: "",
+        palette: ["#0f172a", "#334155"],
+        score: 0
+      },
+      {
+        id: "elias",
+        name: "Elias",
+        age: 28,
+        location: "Wellington, New Zealand",
+        title: "Product Designer • Coffee Roaster",
+        distance: "3 km away",
+        compatibility: "93% match",
+        about: "Design systems nerd with a tiny garage roastery and a weakness for brutalist posters.",
+        interests: ["Design", "Coffee", "Cycling", "Records"],
+        photo: "",
+        avatar: "",
+        palette: ["#312e81", "#4338ca"],
+        score: 0
+      },
+      {
+        id: "nora",
+        name: "Nora",
+        age: 36,
+        location: "Auckland, New Zealand",
+        title: "Startup Operator • Trail Runner",
+        distance: "18 km away",
+        compatibility: "86% match",
+        about: "Leads ops teams, runs long coastal trails, and hosts low-key dinner nights.",
+        interests: ["Running", "Startups", "Cooking", "Podcasts"],
+        photo: "",
+        avatar: "",
+        palette: ["#14532d", "#166534"],
+        score: 0
+      },
+      {
+        id: "ravi",
+        name: "Ravi",
+        age: 33,
+        location: "Christchurch, New Zealand",
+        title: "Data Engineer • Analog Gamer",
+        distance: "9 km away",
+        compatibility: "90% match",
+        about: "Builds data pipelines all week, then disappears into tabletop games and ramen spots.",
+        interests: ["Data", "Board Games", "Ramen", "Night Walks"],
+        photo: "",
+        avatar: "",
+        palette: ["#1f2937", "#0f766e"],
+        score: 0
+      },
+      {
+        id: "sienna",
+        name: "Sienna",
+        age: 29,
+        location: "Dunedin, New Zealand",
+        title: "Art Director • Vinyl DJ",
+        distance: "14 km away",
+        compatibility: "89% match",
+        about: "Art-directs indie campaigns, DJs warm-up vinyl sets, and never misses an opening night.",
+        interests: ["Art Direction", "DJing", "Editorial", "Museums"],
+        photo: "",
+        avatar: "",
+        palette: ["#3f3f46", "#27272a"],
+        score: 0
+      }
+    ];
+
+    const profileCard = document.getElementById("profileCard");
+    const profileMedia = document.getElementById("profileMedia");
+    const profileName = document.getElementById("profileName");
+    const profileAge = document.getElementById("profileAge");
+    const profileLocation = document.getElementById("profileLocation");
+    const profileTitle = document.getElementById("profileTitle");
+    const profileDistance = document.getElementById("profileDistance");
+    const profileCompatibility = document.getElementById("profileCompatibility");
+    const profileAbout = document.getElementById("profileAbout");
+    const profileInterests = document.getElementById("profileInterests");
+    const decisionFlash = document.getElementById("decisionFlash");
+    const scoreList = document.getElementById("scoreList");
+    const emptyState = document.getElementById("emptyState");
+    const stampNope = document.getElementById("stampNope");
+    const stampLike = document.getElementById("stampLike");
+    const openDrawer = document.getElementById("openDrawer");
+    const drawerBackdrop = document.getElementById("drawerBackdrop");
+    const leaderboardPanel = document.getElementById("leaderboardPanel");
+    const dislikeBtn = document.getElementById("dislikeBtn");
+    const likeBtn = document.getElementById("likeBtn");
+    const tweaksPanel = document.getElementById("tweaksPanel");
+    const tweaksToggle = document.getElementById("tweaksToggle");
+    const tweaksIndicator = document.getElementById("tweaksIndicator");
+    const motionSelect = document.getElementById("motionSelect");
+    const radiusRange = document.getElementById("radiusRange");
+    const splitRange = document.getElementById("splitRange");
+    const glowToggle = document.getElementById("glowToggle");
+
+    const scores = new Map(PROFILE_DATA.map((item) => [item.id, item.score || 0]));
+    let cardIndex = 0;
+    let activeProfile = PROFILE_DATA[cardIndex];
+    let isAnimating = false;
+    let drag = null;
+    let drawerDrag = null;
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function profilePhoto(profile) {
+      if (profile.photo) return `url('${profile.photo}')`;
+      return `linear-gradient(150deg, ${profile.palette[0]} 0%, ${profile.palette[1]} 52%, #09090b 100%)`;
+    }
+
+    function avatarPhoto(profile) {
+      if (profile.avatar) return `url('${profile.avatar}')`;
+      if (profile.photo) return `url('${profile.photo}')`;
+      return `linear-gradient(130deg, ${profile.palette[0]}, ${profile.palette[1]})`;
+    }
+
+    function applyCurrentProfile() {
+      activeProfile = PROFILE_DATA[cardIndex % PROFILE_DATA.length];
+      profileName.textContent = activeProfile.name;
+      profileAge.textContent = activeProfile.age;
+      profileLocation.textContent = activeProfile.location;
+      profileTitle.textContent = activeProfile.title;
+      profileDistance.textContent = activeProfile.distance;
+      profileCompatibility.textContent = activeProfile.compatibility;
+      profileAbout.textContent = activeProfile.about;
+      profileInterests.innerHTML = activeProfile.interests.map((item) => `<span class="interest-chip">${item}</span>`).join("");
+      profileMedia.style.backgroundImage = profilePhoto(activeProfile);
+      profileCard.style.transition = "none";
+      profileCard.style.transform = "translate3d(0,0,0) rotate(0deg) scale(1)";
+      profileCard.style.opacity = "1";
+      stampLike.style.opacity = "0";
+      stampNope.style.opacity = "0";
+      stampLike.style.transform = "rotate(10deg) scale(0.9)";
+      stampNope.style.transform = "rotate(-10deg) scale(0.9)";
+      profileCard.classList.remove("is-entering");
+      void profileCard.offsetWidth;
+      profileCard.classList.add("is-entering");
+      window.setTimeout(() => {
+        profileCard.classList.remove("is-entering");
+      }, 580);
+    }
+
+    function sortedLeaders() {
+      return PROFILE_DATA
+        .map((profile) => ({ ...profile, score: scores.get(profile.id) || 0 }))
+        .filter((profile) => profile.score > 0)
+        .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+        .slice(0, 10);
+    }
+
+    function rankClass(rank) {
+      if (rank === 1) return "rank rank-top1";
+      if (rank === 2) return "rank rank-top2";
+      if (rank === 3) return "rank rank-top3";
+      return "rank";
+    }
+
+    function renderLeaderboard() {
+      const leaders = sortedLeaders();
+      emptyState.style.display = leaders.length ? "none" : "grid";
+      scoreList.innerHTML = leaders
+        .map((profile, index) => {
+          const rank = index + 1;
+          return `
+            <li>
+              <button class="score-row" aria-label="Rank ${rank}, ${profile.name} with ${profile.score} likes">
+                <span class="${rankClass(rank)}">#${rank}</span>
+                <span class="avatar" style="background-image:${avatarPhoto(profile)};"></span>
+                <span class="row-name">${profile.name}</span>
+                <span class="row-score">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12.2 20s-7.2-4.9-9.4-8.4C1 8.9 2.3 5.6 5.5 5.2c2-.3 3.3.7 4 2 0 0 .6-1 1.5-1.5 1-.6 2-.8 3-.5 3.1.6 4.4 4 2.5 6.8-2.3 3.5-8.8 8-8.8 8Z"></path>
+                  </svg>
+                  ${profile.score}
+                </span>
+              </button>
+            </li>
+          `;
+        })
+        .join("");
+    }
+
+    function triggerDecisionFlash(direction) {
+      decisionFlash.classList.remove("is-like", "is-dislike");
+      void decisionFlash.offsetWidth;
+      decisionFlash.classList.add(direction === "like" ? "is-like" : "is-dislike");
+    }
+
+    function swipeProgress(deltaX) {
+      const normalized = clamp(deltaX / 180, -1, 1);
+      const tilt = deltaX * 0.045;
+      const lift = Math.min(Math.abs(deltaX) * 0.04, 12);
+      const fade = Math.max(0.84, 1 - Math.abs(deltaX) / 620);
+
+      profileCard.style.transform = `translate3d(${deltaX}px, ${-lift}px, 0) rotate(${tilt}deg) scale(1.01)`;
+      profileCard.style.opacity = String(fade);
+
+      const likeOpacity = clamp(normalized, 0, 1);
+      const nopeOpacity = clamp(-normalized, 0, 1);
+      stampLike.style.opacity = String(likeOpacity);
+      stampNope.style.opacity = String(nopeOpacity);
+      stampLike.style.transform = `rotate(10deg) scale(${0.9 + likeOpacity * 0.22})`;
+      stampNope.style.transform = `rotate(-10deg) scale(${0.9 + nopeOpacity * 0.22})`;
+    }
+
+    function commitDecision(direction, impulse = 1) {
+      if (isAnimating) return;
+      isAnimating = true;
+      const sign = direction === "like" ? 1 : -1;
+      const off = Math.round(window.innerWidth * 1.25) * sign;
+      const rot = (18 + impulse * 8) * sign;
+      const exitDuration = Math.round(clamp(380 - (impulse - 1) * 120, 210, 380));
+      profileCard.style.transition = `transform ${exitDuration}ms var(--motion-ease), opacity ${exitDuration}ms var(--motion-ease)`;
+      profileCard.style.transform = `translate3d(${off}px,-10px,0) rotate(${rot}deg) scale(1.02)`;
+      profileCard.style.opacity = "0.02";
+
+      triggerDecisionFlash(direction);
+      if (navigator.vibrate && impulse > 1.2) {
+        navigator.vibrate(10);
+      }
+
+      if (direction === "like") {
+        scores.set(activeProfile.id, (scores.get(activeProfile.id) || 0) + 1);
+      }
+      renderLeaderboard();
+
+      window.setTimeout(() => {
+        cardIndex = (cardIndex + 1) % PROFILE_DATA.length;
+        applyCurrentProfile();
+        isAnimating = false;
+      }, Math.max(190, exitDuration - 40));
+    }
+
+    function onCardPointerDown(event) {
+      if (isAnimating) return;
+      drag = {
+        startX: event.clientX,
+        currentX: event.clientX,
+        velocityX: 0,
+        lastX: event.clientX,
+        lastTime: performance.now()
+      };
+      profileCard.setPointerCapture(event.pointerId);
+      profileCard.classList.add("is-dragging");
+    }
+
+    function onCardPointerMove(event) {
+      if (!drag) return;
+      const now = performance.now();
+      const dt = Math.max(1, now - drag.lastTime);
+      drag.currentX = event.clientX;
+      drag.velocityX = (event.clientX - drag.lastX) / dt;
+      drag.lastX = event.clientX;
+      drag.lastTime = now;
+      swipeProgress(drag.currentX - drag.startX);
+    }
+
+    function onCardPointerUp(event) {
+      if (!drag) return;
+      profileCard.releasePointerCapture(event.pointerId);
+      profileCard.classList.remove("is-dragging");
+      const deltaX = drag.currentX - drag.startX;
+      const velocityX = drag.velocityX;
+      const flick = Math.abs(velocityX) > 0.42;
+      const impulse = clamp(Math.abs(deltaX) / 180 + Math.abs(velocityX) * 1.9, 1, 2.25);
+      drag = null;
+
+      if (deltaX > 118 || (flick && velocityX > 0)) {
+        commitDecision("like", impulse);
+      } else if (deltaX < -118 || (flick && velocityX < 0)) {
+        commitDecision("dislike", impulse);
+      } else {
+        profileCard.style.transition = `transform calc(var(--motion-duration) * 0.65) var(--motion-spring), opacity calc(var(--motion-duration) * 0.65) var(--motion-ease)`;
+        profileCard.style.transform = "translate3d(0,0,0) rotate(0deg) scale(1)";
+        profileCard.style.opacity = "1";
+        stampLike.style.opacity = "0";
+        stampNope.style.opacity = "0";
+        stampLike.style.transform = "rotate(10deg) scale(0.9)";
+        stampNope.style.transform = "rotate(-10deg) scale(0.9)";
+      }
+    }
+
+    function isMobile() {
+      return window.matchMedia("(max-width: 980px)").matches;
+    }
+
+    function openLeaderboard() {
+      if (!isMobile()) return;
+      document.body.classList.add("drawer-open");
+    }
+
+    function closeLeaderboard() {
+      document.body.classList.remove("drawer-open");
+      leaderboardPanel.style.removeProperty("--drawer-offset");
+    }
+
+    function onDrawerPointerDown(event) {
+      if (!isMobile() || !document.body.classList.contains("drawer-open")) return;
+      drawerDrag = { pointerId: event.pointerId, startX: event.clientX, currentX: event.clientX };
+      leaderboardPanel.setPointerCapture(event.pointerId);
+    }
+
+    function onDrawerPointerMove(event) {
+      if (!drawerDrag) return;
+      drawerDrag.currentX = event.clientX;
+      const delta = Math.max(0, drawerDrag.currentX - drawerDrag.startX);
+      leaderboardPanel.style.setProperty("--drawer-offset", `${delta}px`);
+    }
+
+    function onDrawerPointerUp(event) {
+      if (!drawerDrag) return;
+      leaderboardPanel.releasePointerCapture(event.pointerId);
+      const delta = Math.max(0, drawerDrag.currentX - drawerDrag.startX);
+      drawerDrag = null;
+      if (delta > 90) {
+        closeLeaderboard();
+      } else {
+        leaderboardPanel.style.setProperty("--drawer-offset", "0px");
+      }
+    }
+
+    function applyTweaks(next) {
+      document.documentElement.style.setProperty("--card-radius", `${next.cardRadius}px`);
+      document.documentElement.style.setProperty("--arena-ratio", `${next.arenaSplit}%`);
+      document.documentElement.style.setProperty("--button-glow", next.buttonGlow ? "1" : "0");
+
+      if (next.motionProfile === "subtle") {
+        document.documentElement.style.setProperty("--motion-duration", "320ms");
+        document.documentElement.style.setProperty("--motion-ease", "cubic-bezier(0.2, 0.8, 0.2, 1)");
+      } else if (next.motionProfile === "moderate") {
+        document.documentElement.style.setProperty("--motion-duration", "460ms");
+        document.documentElement.style.setProperty("--motion-ease", "cubic-bezier(0.2, 0.95, 0.3, 1)");
+      } else {
+        document.documentElement.style.setProperty("--motion-duration", "620ms");
+        document.documentElement.style.setProperty("--motion-ease", "cubic-bezier(0.16, 1, 0.3, 1)");
+      }
+    }
+
+    function loadTweaks() {
+      const stored = localStorage.getItem("swipe-tweaks");
+      let data = { ...TWEAK_DEFAULTS };
+      if (stored && stored.trim().startsWith("{")) {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === "object") {
+          data = { ...data, ...parsed };
+        }
+      }
+
+      motionSelect.value = data.motionProfile;
+      radiusRange.value = String(data.cardRadius);
+      splitRange.value = String(data.arenaSplit);
+      glowToggle.checked = Boolean(data.buttonGlow);
+      applyTweaks(data);
+      return data;
+    }
+
+    function saveTweaks(data) {
+      localStorage.setItem("swipe-tweaks", JSON.stringify(data));
+    }
+
+    const tweakState = loadTweaks();
+    applyCurrentProfile();
+    renderLeaderboard();
+
+    profileCard.addEventListener("pointerdown", onCardPointerDown);
+    profileCard.addEventListener("pointermove", onCardPointerMove);
+    profileCard.addEventListener("pointerup", onCardPointerUp);
+    profileCard.addEventListener("pointercancel", onCardPointerUp);
+    dislikeBtn.addEventListener("click", () => commitDecision("dislike", 1.35));
+    likeBtn.addEventListener("click", () => commitDecision("like", 1.35));
+
+    openDrawer.addEventListener("click", openLeaderboard);
+    drawerBackdrop.addEventListener("click", closeLeaderboard);
+    leaderboardPanel.addEventListener("pointerdown", onDrawerPointerDown);
+    leaderboardPanel.addEventListener("pointermove", onDrawerPointerMove);
+    leaderboardPanel.addEventListener("pointerup", onDrawerPointerUp);
+    leaderboardPanel.addEventListener("pointercancel", onDrawerPointerUp);
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowLeft") commitDecision("dislike", 1.2);
+      if (event.key === "ArrowRight") commitDecision("like", 1.2);
+      if (event.key === "Escape") closeLeaderboard();
+    });
+
+    tweaksToggle.addEventListener("click", () => {
+      const isCollapsed = tweaksPanel.classList.toggle("is-collapsed");
+      tweaksToggle.setAttribute("aria-expanded", String(!isCollapsed));
+      tweaksIndicator.textContent = isCollapsed ? "+" : "−";
+    });
+
+    motionSelect.addEventListener("change", () => {
+      tweakState.motionProfile = motionSelect.value;
+      applyTweaks(tweakState);
+      saveTweaks(tweakState);
+    });
+
+    radiusRange.addEventListener("input", () => {
+      tweakState.cardRadius = Number(radiusRange.value);
+      applyTweaks(tweakState);
+      saveTweaks(tweakState);
+    });
+
+    splitRange.addEventListener("input", () => {
+      tweakState.arenaSplit = Number(splitRange.value);
+      applyTweaks(tweakState);
+      saveTweaks(tweakState);
+    });
+
+    glowToggle.addEventListener("change", () => {
+      tweakState.buttonGlow = glowToggle.checked;
+      applyTweaks(tweakState);
+      saveTweaks(tweakState);
+    });
+
+    window.addEventListener("resize", () => {
+      if (!isMobile()) {
+        closeLeaderboard();
+      }
+    });
+  </script>
+</body>
+</html>
