@@ -1,167 +1,124 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-    <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cursor - The AI Code Editor</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
-<body class="body">
-    <nav>
-        <div>
-            <img id="brand_image"
-                src="/Basics/project/cursor/assets/cursor-brand-assets/General Logos/Lockup Horizontal/PNG/LOCKUP_HORIZONTAL_2D_DARK.png"
-                alt="Cursor Logo " />
+<body>
+    <nav class="navbar">
+        <div class="nav-left">
+            <img class="brand-image" src="./assets/cursor-brand-assets/General Logos/Lockup Horizontal/PNG/LOCKUP_HORIZONTAL_2D_DARK.png" alt="Cursor Logo" onerror="this.src='https://cursor.com/assets/images/logo.svg'" />
         </div>
-
-        <div class="feature_money">
-            <p>Product</p>
-            <p>Enterprise</p>
-            <p>Pricing</p>
-            <p>Resources</p>
+        <div class="nav-center">
+            <a href="#">Product</a>
+            <a href="#">Enterprise</a>
+            <a href="#">Pricing</a>
+            <a href="#">Resources</a>
         </div>
-
-        <div class="end_nav">
-            <p id="sign_in">Sign in</p>
-            <button id="download_button">Download</button>
+        <div class="nav-right">
+            <a href="#" class="nav-signin">Sign In</a>
+            <a href="#" class="nav-download">Download</a>
         </div>
     </nav>
 
-    <!-- hero section -->
-
-    <div class="hero">
-        <h2>
-            Built to make you extraordinarily productive, Cursor is the best way to
-            code with AI.
-        </h2>
-        <button id="download_for_windows">Download for Windows</button>
-
-
-    </div>
-    <div class="hero_image">
-        <img src="./assets/image.png" alt="cursor image" />
-
-    </div>
-
-    <div class="company">
-        <p class="Trusted">
-            Trusted every day by millions of professional developers.
-
-        </p>
-        <div class="company_logos">
-
-            <div class="card"><img src="./assets/company_logo/stripe.png" alt="stripe" class="card-image"> </div>
-            <div class="card"> <img src="./assets/company_logo/openai.png" alt="openai" class="card-image"></div>
-            <div class="card"><img src="./assets/company_logo/linear.png" alt="linear" class="card-image"> </div>
-            <div class="card"> <img src="./assets/company_logo/datadog.png" alt="datadog" class="card-image"></div>
-            <div class="card"> <img src="./assets/company_logo/nvidia.png" alt="nvidia" class="card-image"></div>
-            <div class="card"><img src="./assets/company_logo/figma.png" alt="figma" class="card-image"> </div>
-            <div class="card"> <img src="./assets/company_logo/ramp.png" alt="ramp" class="card-image"></div>
-            <div class="card"><img src="./assets/company_logo/adobe.png" alt="adobe" class="card-image"> </div>
-        </div>
-
-
-
-    </div>
-    <div class="agent-container">
-        <div class="agent_card">
-
-            <div class="agent_text">
-                <h3>Agents turn ideas into code</h3>
-                <h3>
-                    Accelerate development by handing
-                    off tasks to Cursor, while you focus on
-                    making decisions.
-                </h3>
-                <p>Learn about agentic development -> </p>
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1 class="hero-title">
+                Built to make you extraordinarily productive, Cursor is the best way to code with AI.
+            </h1>
+            <button class="hero-button">Download for Windows</button>
+            <div class="hero-image-wrapper">
+                <img src="./assets/image.png" alt="Cursor Editor Interface" class="hero-image" />
+                <div class="hero-glow"></div>
             </div>
-            <div class="agent_image">
-                <img src="./assets/agent.png" alt="Agent image">
+        </section>
+
+        <!-- Trusted By Section -->
+        <section class="trusted-by">
+            <p class="trusted-text">Trusted every day by millions of professional developers.</p>
+            <div class="company-logos">
+                <div class="company-card"><img src="./assets/company_logo/stripe.png" alt="Stripe"></div>
+                <div class="company-card"><img src="./assets/company_logo/openai.png" alt="OpenAI"></div>
+                <div class="company-card"><img src="./assets/company_logo/linear.png" alt="Linear"></div>
+                <div class="company-card"><img src="./assets/company_logo/datadog.png" alt="Datadog"></div>
+                <div class="company-card"><img src="./assets/company_logo/nvidia.png" alt="Nvidia"></div>
+                <div class="company-card"><img src="./assets/company_logo/figma.png" alt="Figma"></div>
+                <div class="company-card"><img src="./assets/company_logo/ramp.png" alt="Ramp"></div>
+                <div class="company-card"><img src="./assets/company_logo/adobe.png" alt="Adobe"></div>
             </div>
-        </div>
-    </div>
+        </section>
 
-
-
-
-    <div class="magic-container">
-        <div class="magic_card">
-
-            <div class="magic_image">
-                <img src="./assets/image/magic.png" alt="Magic image">
+        <!-- Features Section -->
+        <section class="features">
+            <!-- Feature 1 -->
+            <div class="feature-card">
+                <div class="feature-text">
+                    <h3>Agents turn ideas into code</h3>
+                    <p>Accelerate development by handing off tasks to Cursor, while you focus on making decisions.</p>
+                    <a href="#" class="learn-more">Learn about agentic development &rarr;</a>
+                </div>
+                <div class="feature-image">
+                    <img src="./assets/agent.png" alt="Agent Feature" onerror="this.style.display='none'">
+                </div>
             </div>
-            <div class="magic_text">
-                <h3>Magically accurate autocomplete</h3>
-                <h3>
 
-                    Our specialized Tab model predicts
-                    your next action with striking speed
-                    and precision.
-                </h3>
-                <p>Learn about magicic development -> </p>
+            <!-- Feature 2 -->
+            <div class="feature-card reverse">
+                <div class="feature-image">
+                    <img src="./assets/image/magic.png" alt="Magic Autocomplete" onerror="this.style.display='none'">
+                </div>
+                <div class="feature-text">
+                    <h3>Magically accurate autocomplete</h3>
+                    <p>Our specialized Tab model predicts your next action with striking speed and precision.</p>
+                    <a href="#" class="learn-more">Learn about magic development &rarr;</a>
+                </div>
             </div>
-        </div>
-    </div>
+        </section>
 
-
-    </div>
-    <div class="new_way">
-        <h1>The new way to build software.</h1>
-    </div>
-    <div class="testimonial">
-        <div class="testimonial_container">
-            <div class="testimonial_card">
-                <figure class="testimonial_figure">
-                    <blockquote class="testimonial_quote">
-                        <p>"It was night and day from one batch to another, adoption went from single digits to over 80%. It just spread like wildfire, all the best builders were using Cursor."</p>
+        <!-- Testimonial Section -->
+        <section class="testimonials">
+            <h2 class="section-title">The new way to build software.</h2>
+            <div class="testimonial-container">
+                <div class="testimonial-card">
+                    <blockquote class="testimonial-quote">
+                        "It was night and day from one batch to another, adoption went from single digits to over 80%. It just spread like wildfire, all the best builders were using Cursor."
                     </blockquote>
                     <div class="profile">
-                        <div class="profile_image">
-                            <img src="https://cursor.com/marketing-static/_next/image?url=https%3A%2F%2Fptht05hbb1ssoooe.public.blob.vercel-storage.com%2Fassets%2Favatars%2Fdiana-hu-avatar.png&w=96&q=70" alt="Diana Hu">
+                        <img class="profile-image" src="https://cursor.com/marketing-static/_next/image?url=https%3A%2F%2Fptht05hbb1ssoooe.public.blob.vercel-storage.com%2Fassets%2Favatars%2Fdiana-hu-avatar.png&w=96&q=70" alt="Diana Hu">
+                        <div class="profile-info">
+                            <span class="profile-name">Diana Hu</span>
+                            <span class="profile-position">General Partner, Y Combinator</span>
                         </div>
-                        <figcaption class="profile_info">
-                            <div class="profile_text">
-                                <span class="name">Diana Hu</span>
-                                <span class="position">General Partner, Y Combinator</span>
-                            </div>
-                        </figcaption>
                     </div>
-                </figure>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-logo">
+                <img src="./assets/cursor-brand-assets/General Logos/Lockup Horizontal/PNG/LOCKUP_HORIZONTAL_2D_DARK.png" alt="Cursor Logo" class="brand-image">
+                <p class="footer-tagline">The AI Code Editor.</p>
+            </div>
+            <div class="footer-links">
+                <div class="footer-column">
+                    <h4>Product</h4>
+                    <a href="#">Features</a>
+                    <a href="#">Pricing</a>
+                    <a href="#">Download</a>
+                </div>
+                <div class="footer-column">
+                    <h4>Company</h4>
+                    <a href="#">About</a>
+                    <a href="#">Blog</a>
+                    <a href="#">Careers</a>
+                </div>
             </div>
         </div>
-    </div>
-
-    <div class="frontier">
-
-
-    </div>
-    <div class="changelog">
-
-    </div>
-
-    <div class="applied_team">
-
-    </div>
-
-    <div class="recent_hightlights">
-
-    </div>
-
-    <div class="try_cursor_now">
-
-    </div>
-
-    <div class="footer">
-
-    </div>
-
-
-
-
-
-
+    </footer>
 </body>
-
 </html>
